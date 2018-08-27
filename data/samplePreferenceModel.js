@@ -1,29 +1,13 @@
 module.exports = (email = 'test.user@alexa.ai') => {
     return {
-        likes: [
+        basePreferences: [
             {
-                url: '', // expires
-                vin: '', // lasts 4ever
-                reasons: {
-                    bodyStyle: 'suv',
-                    color: 'red'
-                }
-            },
-            {
-                url: '',
-                vin: '',
-                reasons: {
-                    bodyStyle: 'coupe',
-                    price: '17695'
-                }
-            },
-            {
-                url: '',
-                vin: '',
-                reasons: {
-                    bodyStyle: 'coupe',
-                    price: '17695'
-                }
+                maxMileage: 60000,
+                maxPrice: 40000,
+                minYear: 2005,
+                colors: [],
+                bodyStyles: ['suv', 'sedan'],
+                conditions: ['new', 'used', 'certified']
             }
         ],
         dislikes: [
@@ -103,6 +87,12 @@ module.exports = (email = 'test.user@alexa.ai') => {
                 reasons: {
                     model: 'prius'
                 }
+            }
+        ],
+        saved: [
+            {
+                url: '',
+                vin: '',
             }
         ]
     }
