@@ -3,6 +3,8 @@ const Alexa = require('ask-sdk-core');
 const get = require('lodash/get');
 const carApiSearch = require('./helper/api');
 const getSlotValues = require('./helper/getSlotValues');
+const extractDeviceId = require('./helper/extractDeviceId');
+const dynamoDB = require('./helper/dynamoDB');
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -56,6 +58,50 @@ const SearchCarsNowIntent = {
         .speak(speechText)
         .withSimpleCard('Hello World', speechText)
         .getResponse();
+    },
+};
+
+const UpdateCityIntent = {
+    canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+        && handlerInput.requestEnvelope.request.intent.name === 'UpdateCityIntent'
+        && handlerInput.requestEnvelope.request.dialogState !== 'COMPLETED';
+    },
+    handle(handlerInput) {
+      return handlerInput.responseBuilder
+        .addDelegateDirective(handlerInput.requestEnvelope.request.intent)
+        .getResponse();
+    },
+};
+
+const CompleteUpdateCityIntent = {
+    canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+        && handlerInput.requestEnvelope.request.intent.name === 'UpdateCityIntent';
+    },
+    handle(handlerInput) {
+        const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
+        const slotValues = getSlotValues(filledSlots);
+        const city = get(slotValues, 'City.resolved');
+        let speechText;
+        if (city === undefined) {
+            speechText = 'Unable to determine city, defaulting to Atlanta. To try again, say, Alexa update search city.';
+        }
+        speechText = `You have requested ${city}. Your preferences will be updated.`;
+
+        console.log(JSON.stringify(handlerInput.requestEnvelope));
+
+        // Get the device id (used as primary key to identify user in database)
+        const deviceId = extractDeviceId(handlerInput.requestEnvelope);
+
+        console.log(deviceId);
+
+        // Update the user's preferences
+        dynamoDB.writeItem(handlerInput.requestEnvelope, {deviceId, test: '1234'});
+
+        return handlerInput.responseBuilder
+            .speak(speechText)
+            .getResponse();
     },
 };
 
@@ -274,11 +320,13 @@ exports.handler = Alexa.SkillBuilders.custom()
         UpdateMaxMileageIntent,
         UpdateMaxPriceIntent,
         UpdateMinYearIntent,
+        UpdateCityIntent,
         CompleteUpdateConditionsIntent,
         CompleteUpdateBodyStyleIntent,
         CompleteUpdateMaxMileageIntent,
         CompleteUpdateMaxPriceIntent,
         CompleteUpdateMinYearIntent,
+        CompleteUpdateCityIntent,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler
