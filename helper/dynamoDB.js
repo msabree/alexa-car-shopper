@@ -1,6 +1,6 @@
 /* eslint max-len: 0 */
 /* eslint max-len: 0 */
-const { DynamoDbPersistenceAdapter } = require('ask-sdk-dynamodb-persistence-adapter');
+const {DynamoDbPersistenceAdapter} = require('ask-sdk-dynamodb-persistence-adapter');
 const dynamoDbPersistenceAdapter = new DynamoDbPersistenceAdapter({
     tableName: 'Alexa-Car-Shopper',
     partitionKeyName: 'user-car-preferences',

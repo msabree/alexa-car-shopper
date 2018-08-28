@@ -40,19 +40,15 @@ const SearchCarsNowIntent = {
         const results = carApiSearch(carSearchQuery);
 
         // for testing we'll use the first item
-        const firstListingForTest = results.listings[0];
+        const firstListingForTest = results.alphaShowcase[0];
 
         // parse results
-        const year = get(firstListingForTest, 'build.year', 'year unknown');
-        const make = get(firstListingForTest, 'build.make', 'make unknown');
-        const model = get(firstListingForTest, 'build.model', 'model unknown');
-        const trim = get(firstListingForTest, 'build.trim', 'trim unknown');
-        const miles = get(firstListingForTest, 'miles', 'miles unknown');
-        const color = get(firstListingForTest, 'exterior_color', 'unknown color');
-        let price = get(firstListingForTest, 'price', 0);
+        const description = get(firstListingForTest, 'description', 'car');
+        const miles = get(firstListingForTest, 'specifications.mileage.value', 'miles unknown');
+        let price = get(firstListingForTest, 'pricingDetail.salesPrice', 0);
         price = (price === 0) ? 'price unknown' : Math.round(price);
 
-        const speechText = `I found a ${year} ${make} ${model} ${trim} with ${miles} miles and the color is ${color} at ${price} dollars. Would you like me to send you the full description?`;
+        const speechText = `I found a ${description} with ${miles} miles at ${price} dollars. Would you like me to send you the full description?`;
 
       return handlerInput.responseBuilder
         .speak(speechText)
