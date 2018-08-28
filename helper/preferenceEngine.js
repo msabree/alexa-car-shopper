@@ -2,7 +2,7 @@
 /* eslint max-len: 0 */
 const get = require('lodash/get');
 const includes = require('lodash/includes');
-const baseBodyStyles = require('./data/bodyStyles');
+const baseBodyStyles = require('../data/bodyStyles');
 
 /**
  * Returns the max price to show.

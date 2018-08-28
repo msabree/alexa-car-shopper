@@ -2,6 +2,7 @@
 const Alexa = require('ask-sdk-core');
 const get = require('lodash/get');
 const carApiSearch = require('./helper/api');
+const getSlotValues = require('./helper/getSlotValues');
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -24,10 +25,10 @@ const LaunchRequestHandler = {
     },
 };
 
-const SellMeACarIntent = {
+const SearchCarsNowIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'SellMeACarIntent';
+        && handlerInput.requestEnvelope.request.intent.name === 'SearchCarsNowIntent';
     },
     handle(handlerInput) {
         // create query
@@ -45,6 +46,7 @@ const SellMeACarIntent = {
         const model = get(firstListingForTest, 'build.model', 'model unknown');
         const trim = get(firstListingForTest, 'build.trim', 'trim unknown');
         const miles = get(firstListingForTest, 'miles', 'miles unknown');
+        const color = get(firstListingForTest, 'exterior_color', 'unknown color');
         let price = get(firstListingForTest, 'price', 0);
         price = (price === 0) ? 'price unknown' : Math.round(price);
 
@@ -60,7 +62,7 @@ const SellMeACarIntent = {
 const UpdateConditionsIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'TrainPreferenceEngineIntent'
+        && handlerInput.requestEnvelope.request.intent.name === 'UpdateConditionsIntent'
         && handlerInput.requestEnvelope.request.dialogState !== 'COMPLETED';
     },
     handle(handlerInput) {
@@ -73,24 +75,24 @@ const UpdateConditionsIntent = {
 const CompleteUpdateConditionsIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'TrainPreferenceEngineIntent';
+        && handlerInput.requestEnvelope.request.intent.name === 'UpdateConditionsIntent';
     },
     handle(handlerInput) {
-      const speechText = `Your preferencs have been updated. Say 'Aexa, find my car now' to start searching!`;
-      const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
+        const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
+        const slotValues = getSlotValues(filledSlots);
+        const carCondition = get(slotValues, 'CarCondition.resolved');
+        const speechText = `You have requested ${carCondition}. Your preferences will be updated.`;
 
-      console.log(`The filled slots: ${JSON.stringify(filledSlots)}`);
-
-      return handlerInput.responseBuilder
-        .speak(speechText)
-        .getResponse();
+        return handlerInput.responseBuilder
+            .speak(speechText)
+            .getResponse();
     },
 };
 
 const UpdateBodyStyleIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'TrainPreferenceEngineIntent'
+        && handlerInput.requestEnvelope.request.intent.name === 'UpdateBodyStyleIntent'
         && handlerInput.requestEnvelope.request.dialogState !== 'COMPLETED';
     },
     handle(handlerInput) {
@@ -103,13 +105,13 @@ const UpdateBodyStyleIntent = {
 const CompleteUpdateBodyStyleIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'TrainPreferenceEngineIntent';
+        && handlerInput.requestEnvelope.request.intent.name === 'UpdateBodyStyleIntent';
     },
     handle(handlerInput) {
-      const speechText = `Your preferencs have been updated. Say 'Aexa, find my car now' to start searching!`;
-      const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
-
-      console.log(`The filled slots: ${JSON.stringify(filledSlots)}`);
+        const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
+        const slotValues = getSlotValues(filledSlots);
+        const bodyStyle = get(slotValues, 'BodyStyle.resolved');
+        const speechText = `You have requested ${bodyStyle}. Your preferences will be updated.`;
 
       return handlerInput.responseBuilder
         .speak(speechText)
@@ -120,7 +122,7 @@ const CompleteUpdateBodyStyleIntent = {
 const UpdateMaxPriceIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'TrainPreferenceEngineIntent'
+        && handlerInput.requestEnvelope.request.intent.name === 'UpdateMaxPriceIntent'
         && handlerInput.requestEnvelope.request.dialogState !== 'COMPLETED';
     },
     handle(handlerInput) {
@@ -133,7 +135,7 @@ const UpdateMaxPriceIntent = {
 const CompleteUpdateMaxPriceIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'TrainPreferenceEngineIntent';
+        && handlerInput.requestEnvelope.request.intent.name === 'UpdateMaxPriceIntent';
     },
     handle(handlerInput) {
       const speechText = `Your preferencs have been updated. Say 'Aexa, find my car now' to start searching!`;
@@ -150,7 +152,7 @@ const CompleteUpdateMaxPriceIntent = {
 const UpdateMaxMileageIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'TrainPreferenceEngineIntent'
+        && handlerInput.requestEnvelope.request.intent.name === 'UpdateMaxMileageIntent'
         && handlerInput.requestEnvelope.request.dialogState !== 'COMPLETED';
     },
     handle(handlerInput) {
@@ -163,7 +165,7 @@ const UpdateMaxMileageIntent = {
 const CompleteUpdateMaxMileageIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'TrainPreferenceEngineIntent';
+        && handlerInput.requestEnvelope.request.intent.name === 'UpdateMaxMileageIntent';
     },
     handle(handlerInput) {
       const speechText = `Your preferencs have been updated. Say 'Aexa, find my car now' to start searching!`;
@@ -180,7 +182,7 @@ const CompleteUpdateMaxMileageIntent = {
 const UpdateMinYearIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'TrainPreferenceEngineIntent'
+        && handlerInput.requestEnvelope.request.intent.name === 'UpdateMinYearIntent'
         && handlerInput.requestEnvelope.request.dialogState !== 'COMPLETED';
     },
     handle(handlerInput) {
@@ -193,7 +195,7 @@ const UpdateMinYearIntent = {
 const CompleteUpdateMinYearIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'TrainPreferenceEngineIntent';
+        && handlerInput.requestEnvelope.request.intent.name === 'UpdateMinYearIntent';
     },
     handle(handlerInput) {
       const speechText = `Your preferencs have been updated. Say 'Aexa, find my car now' to start searching!`;
@@ -257,8 +259,8 @@ const ErrorHandler = {
         console.log(`Error handled: ${error.message}`);
 
         return handlerInput.responseBuilder
-            .speak('Sorry, I can\'t understand the command. Please say again.')
-            .reprompt('Sorry, I can\'t understand the command. Please say again.')
+            .speak('Sorry, there was an error processing the request. The dev team has been notified. Please try again later.')
+            .reprompt('Sorry, there was an error processing the request. The dev team has been notified. Please try again later.')
             .getResponse();
     },
 };
@@ -266,7 +268,7 @@ const ErrorHandler = {
 exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
-        SellMeACarIntent,
+        SearchCarsNowIntent,
         UpdateConditionsIntent,
         UpdateBodyStyleIntent,
         UpdateMaxMileageIntent,

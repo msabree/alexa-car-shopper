@@ -1,5 +1,5 @@
 /* eslint valid-jsdoc: 0 */
-const sampleResponse = require('./data/sampleResponse');
+const sampleResponse = require('../data/sampleResponse');
 
 /**
  * Makes the api request to get car inventory
