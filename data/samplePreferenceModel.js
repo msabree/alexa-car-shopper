@@ -5,9 +5,8 @@ module.exports = (email = 'test.user@alexa.ai') => {
                 maxMileage: 60000,
                 maxPrice: 40000,
                 minYear: 2005,
-                colors: [],
                 bodyStyles: ['suv', 'sedan'],
-                conditions: ['new', 'used', 'certified']
+                conditions: []
             }
         ],
         dislikes: [

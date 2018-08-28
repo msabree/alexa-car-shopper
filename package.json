@@ -9,8 +9,13 @@
     "lodash": "^4.17.10",
     "request": "^2.88.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "eslint": "^5.4.0",
+    "eslint-config-google": "^0.9.1"
+  },
   "scripts": {
+    "lint": "./node_modules/.bin/eslint index.js helper/*.js",
+    "lint-fix": "./node_modules/.bin/eslint --fix index.js helper/*.js",  
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Makeen Sabree",
