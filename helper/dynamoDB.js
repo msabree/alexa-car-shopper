@@ -1,35 +1,79 @@
 /* eslint max-len: 0 */
-const extractDeviceId = require('./extractDeviceId');
+const get = require('lodash/get');
+const set = require('lodash/set');
+const cloneDeep = require('lodash/cloneDeep');
 const {DynamoDbPersistenceAdapter} = require('ask-sdk-dynamodb-persistence-adapter');
 const dynamoDbPersistenceAdapter = new DynamoDbPersistenceAdapter({
     tableName: 'Alexa-Car-Shopper',
-    partitionKeyName: 'user-car-preferences',
+    partitionKeyName: 'userId',
 });
 
-// async, but do we care?
-// it should finish eventually
-// do we care about unresolved promises in lamdas?
-const saveUserPreferences = (requestEnvelope, attributesObject) => {
-    // pull existing and combine/update before saving
-    dynamoDbPersistenceAdapter.saveAttributes(requestEnvelope, attributesObject);
+/**
+ *
+ * @param {*} requestEnvelope
+ * @param {String} action - 'add', 'clear', 'clearAll'
+ * @param {String} attributeValueType - 'number', 'string', 'array'
+ * @param {*} attributeKey
+ * @param {*} attributeValue
+ */
+const saveUserBasePreferences = (requestEnvelope, action = 'add', attributeValueType, attributeKey, attributeValue) => {
+    getStoredUserPreferences(requestEnvelope)
+    .then((storedUserPreferences) => {
+        console.log(storedUserPreferences);
+        const basePreferencesPath = 'basePreferences';
+        let clonedStoredUserPreferences = cloneDeep(storedUserPreferences);
+        let storedAttributeValue = get(storedUserPreferences, attributeKey);
+
+        console.log(action, attributeKey, attributeValue);
+
+        if (action === 'add') {
+            if (storedAttributeValue === undefined) {
+                if (attributeValueType === 'array') {
+                    set(clonedStoredUserPreferences, [basePreferencesPath, attributeKey], [attributeValue]);
+                } else {
+                    set(clonedStoredUserPreferences, [basePreferencesPath, attributeKey], attributeValue);
+                }
+            } else {
+                if (attributeValueType === 'array') {
+                    storedAttributeValue.push(attributeValue);
+                } else {
+                    storedAttributeValue = attributeValue;
+                }
+                set(clonedStoredUserPreferences, [basePreferencesPath, attributeKey], attributeValue);
+            }
+        } else if (action === 'clear') {
+            if (attributeValueType === 'array') {
+                set(clonedStoredUserPreferences, [basePreferencesPath, attributeKey], storedAttributeValue.filter((item) => item !== attributeValue));
+            } else {
+                delete clonedStoredUserPreferences[attributeKey];
+            }
+        } else if (action === 'clearAll') {
+            delete clonedStoredUserPreferences[attributeKey];
+        }
+
+        return dynamoDbPersistenceAdapter.saveAttributes(requestEnvelope, clonedStoredUserPreferences);
+    })
+    .catch((err) => {
+        console.log(err.message);
+        return Promise.reject(err);
+    });
 };
 
-// match attribute is an object -> {deviceId}
+// The userId is embedded in the requestEnvelope by default.
 const getStoredUserPreferences = (requestEnvelope) => {
-    console.log(JSON.stringify(requestEnvelope));
-    return new Promise((resolve) => {
-        const deviceId = extractDeviceId(requestEnvelope);
+    return new Promise((resolve, reject) => {
         const getAttributesPromise = dynamoDbPersistenceAdapter.getAttributes(requestEnvelope);
-        // Returns the entire database?
-        getAttributesPromise.then((attributesArray) => {
-            console.log(attributesArray.filter((item) => item.deviceId !== deviceId));
-            console.log(attributesArray.filter((item) => item.deviceId === deviceId));
-            resolve(attributesArray.filter((item) => item.deviceId === deviceId));
+        getAttributesPromise.then((storedUserPreferences) => {
+            resolve(storedUserPreferences);
+        })
+        .catch((err) => {
+            console.log(err);
+            reject(err);
         });
     });
 };
 
 module.exports = {
-    saveUserPreferences,
+    saveUserBasePreferences,
     getStoredUserPreferences,
 };

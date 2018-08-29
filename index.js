@@ -90,15 +90,17 @@ const CompleteUpdateCityIntent = {
         const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
         const slotValues = getSlotValues(filledSlots);
         const city = get(slotValues, 'City.resolved');
+        let zip = 30318;
         let speechText;
         if (city === undefined || city.split(' ').length !== 2) {
             speechText = 'Unable to determine city, defaulting to Atlanta Georgia. To try again, say, Alexa update search city.';
         } else {
             const cityStateArray = city.split(' '); // city state
             const location = zipcodes.lookupByName(cityStateArray[0], cityStateArray[1])[0];
-            const zip = get(location, 'zip');
+            zip = get(location, 'zip');
 
             if (zip === undefined) {
+                zip = 30318;
                 speechText = 'Unable to determine city, defaulting to Atlanta Georgia. To try again, say, Alexa update search city.';
             } else {
                 speechText = `You have requested ${city} which maps to zipcode ${zip}. Your preferences will be updated.`;
@@ -106,7 +108,7 @@ const CompleteUpdateCityIntent = {
         }
 
         // Update the user's preferences
-        dynamoDB.saveUserPreferences(handlerInput.requestEnvelope, {deviceId: '676765657576576756657', test: '1234'});
+        dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'number', 'zip', zip);
 
         return handlerInput.responseBuilder
             .speak(speechText)
