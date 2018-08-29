@@ -1,10 +1,15 @@
 /* eslint max-len: 0 */
 const Alexa = require('ask-sdk-core');
+const zipcodes = require('zipcodes');
 const get = require('lodash/get');
 const carApiSearch = require('./helper/api');
 const getSlotValues = require('./helper/getSlotValues');
-const extractDeviceId = require('./helper/extractDeviceId');
 const dynamoDB = require('./helper/dynamoDB');
+
+// TEST
+const storedUserPreferencesTEST = require('./data/samplePreferenceModel');
+
+const APP_NAME = 'Alexa - Car Shopper';
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -22,7 +27,7 @@ const LaunchRequestHandler = {
       return handlerInput.responseBuilder
         .speak(speechText)
         .reprompt(speechText)
-        .withSimpleCard('Hello World', speechText)
+        .withSimpleCard(APP_NAME, speechText)
         .getResponse();
     },
 };
@@ -33,26 +38,29 @@ const SearchCarsNowIntent = {
         && handlerInput.requestEnvelope.request.intent.name === 'SearchCarsNowIntent';
     },
     handle(handlerInput) {
-        // create query
-        const carSearchQuery = {};
+        // Pull the stored user preferences from the database
+        const getUserPreferencesPromise = getStoredUserPreferences(handlerInput.requestEnvelope);
+        console.log(typeof getUserPreferencesPromise);
+
+        // increment by 100 if no results found
+        const startIndex = 0;
 
         // Perform car search
-        const results = carApiSearch(carSearchQuery);
+        const results = carApiSearch(storedUserPreferencesTEST, startIndex);
 
         // for testing we'll use the first item
         const firstListingForTest = results.alphaShowcase[0];
 
         // parse results
-        const description = get(firstListingForTest, 'description', 'car');
+        const description = get(firstListingForTest, 'description.label', 'car');
         const miles = get(firstListingForTest, 'specifications.mileage.value', 'miles unknown');
-        let price = get(firstListingForTest, 'pricingDetail.salesPrice', 0);
-        price = (price === 0) ? 'price unknown' : Math.round(price);
+        let price = get(firstListingForTest, 'pricingDetail.salePrice', 'price unknown');
 
         const speechText = `I found a ${description} with ${miles} miles at ${price} dollars. Would you like me to send you the full description?`;
 
       return handlerInput.responseBuilder
         .speak(speechText)
-        .withSimpleCard('Hello World', speechText)
+        .withSimpleCard(APP_NAME, speechText)
         .getResponse();
     },
 };
@@ -71,6 +79,9 @@ const UpdateCityIntent = {
 };
 
 const CompleteUpdateCityIntent = {
+
+    // Get stored user preferences whenever doing an update.
+
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
         && handlerInput.requestEnvelope.request.intent.name === 'UpdateCityIntent';
@@ -80,17 +91,19 @@ const CompleteUpdateCityIntent = {
         const slotValues = getSlotValues(filledSlots);
         const city = get(slotValues, 'City.resolved');
         let speechText;
-        if (city === undefined) {
-            speechText = 'Unable to determine city, defaulting to Atlanta. To try again, say, Alexa update search city.';
+        if (city === undefined || city.split(' ').length !== 2) {
+            speechText = 'Unable to determine city, defaulting to Atlanta Georgia. To try again, say, Alexa update search city.';
+        } else {
+            const cityStateArray = city.split(' '); // city state
+            const location = zipcodes.lookupByName(cityStateArray[0], cityStateArray[1])[0];
+            const zip = get(location, 'zip');
+
+            if (zip === undefined) {
+                speechText = 'Unable to determine city, defaulting to Atlanta Georgia. To try again, say, Alexa update search city.';
+            } else {
+                speechText = `You have requested ${city} which maps to zipcode ${zip}. Your preferences will be updated.`;
+            }
         }
-        speechText = `You have requested ${city}. Your preferences will be updated.`;
-
-        console.log(JSON.stringify(handlerInput.requestEnvelope));
-
-        // Get the device id (used as primary key to identify user in database)
-        const deviceId = extractDeviceId(handlerInput.requestEnvelope);
-
-        console.log(deviceId);
 
         // Update the user's preferences
         dynamoDB.writeItem(handlerInput.requestEnvelope, {deviceId, test: '1234'});
@@ -262,7 +275,7 @@ const HelpIntentHandler = {
       return handlerInput.responseBuilder
         .speak(speechText)
         .reprompt(speechText)
-        .withSimpleCard('Hello World', speechText)
+        .withSimpleCard(APP_NAME, speechText)
         .getResponse();
     },
 };
@@ -274,11 +287,11 @@ const CancelAndStopIntentHandler = {
             || handlerInput.requestEnvelope.request.intent.name === 'AMAZON.StopIntent');
     },
     handle(handlerInput) {
-        const speechText = 'Goodbye!';
+        const speechText = 'Your preferences are saved. You can resume your search where you left off. Good bye';
 
         return handlerInput.responseBuilder
             .speak(speechText)
-            .withSimpleCard('Hello World', speechText)
+            .withSimpleCard(APP_NAME, speechText)
             .getResponse();
     },
 };

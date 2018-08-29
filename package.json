@@ -7,7 +7,8 @@
     "ask-sdk": "^2.0.7",
     "ask-sdk-dynamodb-persistence-adapter": "^2.0.7",
     "lodash": "^4.17.10",
-    "request": "^2.88.0"
+    "request": "^2.88.0",
+    "zipcodes": "^6.1.0"
   },
   "devDependencies": {
     "eslint": "^5.4.0",
@@ -15,7 +16,7 @@
   },
   "scripts": {
     "lint": "./node_modules/.bin/eslint index.js helper/*.js",
-    "lint-fix": "./node_modules/.bin/eslint --fix index.js helper/*.js",  
+    "lint-fix": "./node_modules/.bin/eslint --fix index.js helper/*.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Makeen Sabree",

@@ -19,7 +19,10 @@ const maxMileageOptions = [
  * Makes the api request to get car inventory
  * based on constructed query params.
  */
-module.exports = (basePreferences, startIndex = 0) => {
+module.exports = (storedUserPreferences, startIndex = 0) => {
+    // basePreferences, dislikes, saved cars
+    const basePreferences = storedUserPreferences.basePreferences;
+
     // Need a zip, default to Atlanta
     const zip = get(basePreferences, 'zip', 30318);
 

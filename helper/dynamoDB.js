@@ -1,5 +1,6 @@
 /* eslint max-len: 0 */
 /* eslint max-len: 0 */
+const extractDeviceId = require('./helper/extractDeviceId');
 const {DynamoDbPersistenceAdapter} = require('ask-sdk-dynamodb-persistence-adapter');
 const dynamoDbPersistenceAdapter = new DynamoDbPersistenceAdapter({
     tableName: 'Alexa-Car-Shopper',
@@ -9,13 +10,26 @@ const dynamoDbPersistenceAdapter = new DynamoDbPersistenceAdapter({
 // async, but do we care?
 // it should finish eventually
 // do we care about unresolved promises in lamdas?
-const writeItem = (requestEnvelope, attributesObject) => {
+const saveUserPreferences = (requestEnvelope, attributesObject) => {
     dynamoDbPersistenceAdapter.saveAttributes(requestEnvelope, attributesObject);
 };
 
-const readItem = () => {};
+// match attribute is an object -> {deviceId}
+const getStoredUserPreferences = (requestEnvelope) => {
+    console.log(JSON.stringify(requestEnvelope));
+    return new Promise((resolve) => {
+        const deviceId = extractDeviceId(requestEnvelope);
+        const getAttributesPromise = dynamoDbPersistenceAdapter.getAttributes(requestEnvelope);
+        // Returns the entire database?
+        getAttributesPromise.then((attributesArray) => {
+            console.log(attributesArray.filter((item) => item.deviceId !== deviceId));
+            console.log(attributesArray.filter((item) => item.deviceId === deviceId));
+            resolve(attributesArray.filter((item) => item.deviceId === deviceId));
+        });
+    });
+};
 
 module.exports = {
-    writeItem,
-    readItem,
+    saveUserPreferences,
+    getStoredUserPreferences,
 };
