@@ -1,6 +1,5 @@
 /* eslint max-len: 0 */
-/* eslint max-len: 0 */
-const extractDeviceId = require('./helper/extractDeviceId');
+const extractDeviceId = require('./extractDeviceId');
 const {DynamoDbPersistenceAdapter} = require('ask-sdk-dynamodb-persistence-adapter');
 const dynamoDbPersistenceAdapter = new DynamoDbPersistenceAdapter({
     tableName: 'Alexa-Car-Shopper',
@@ -11,6 +10,7 @@ const dynamoDbPersistenceAdapter = new DynamoDbPersistenceAdapter({
 // it should finish eventually
 // do we care about unresolved promises in lamdas?
 const saveUserPreferences = (requestEnvelope, attributesObject) => {
+    // pull existing and combine/update before saving
     dynamoDbPersistenceAdapter.saveAttributes(requestEnvelope, attributesObject);
 };
 

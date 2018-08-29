@@ -106,7 +106,7 @@ const CompleteUpdateCityIntent = {
         }
 
         // Update the user's preferences
-        dynamoDB.writeItem(handlerInput.requestEnvelope, {deviceId, test: '1234'});
+        dynamoDB.saveUserPreferences(handlerInput.requestEnvelope, {deviceId: '676765657576576756657', test: '1234'});
 
         return handlerInput.responseBuilder
             .speak(speechText)

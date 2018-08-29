@@ -37,6 +37,6 @@ module.exports = (filledSlots) => {
         };
       }
     }, this);
-
+    console.log(slotValues);
     return slotValues;
 };
