@@ -12,7 +12,7 @@ const dynamoDbPersistenceAdapter = new DynamoDbPersistenceAdapter({
  *
  * @param {*} requestEnvelope
  * @param {String} action - 'add', 'clear', 'clearAll'
- * @param {String} attributeValueType - 'number', 'string', 'array'
+ * @param {String} attributeValueType - 'string', 'array'
  * @param {*} attributeKey
  * @param {*} attributeValue
  */

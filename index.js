@@ -101,14 +101,14 @@ const CompleteUpdateCityIntent = {
 
             if (zip === undefined) {
                 zip = 30318;
-                speechText = 'Unable to determine city, defaulting to Atlanta Georgia. To try again, say, Alexa update search city.';
+                speechText = 'Unable to determine city, setting to Atlanta Georgia. To try again, say, Alexa update search city.';
             } else {
                 speechText = `You have requested ${city} which maps to zipcode ${zip}. Your preferences will be updated.`;
             }
         }
 
         // Update the user's preferences
-        dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'number', 'zip', zip);
+        dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'zip', zip);
 
         return handlerInput.responseBuilder
             .speak(speechText)
@@ -138,7 +138,16 @@ const CompleteUpdateConditionsIntent = {
         const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
         const slotValues = getSlotValues(filledSlots);
         const carCondition = get(slotValues, 'CarCondition.resolved');
-        const speechText = `You have requested ${carCondition}. Your preferences will be updated.`;
+        let speechText = '';
+
+        if (carCondition === undefined) {
+            speechText = 'Unable to understand condition request. To try again, say, Alexa update search conditions.';
+        } else {
+            speechText = `You have requested to search ${carCondition} vehicles. Your preferences will be updated.`;
+
+            // Update the user's preferences
+            dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'array', 'conditions', carCondition);
+        }
 
         return handlerInput.responseBuilder
             .speak(speechText)
@@ -168,7 +177,16 @@ const CompleteUpdateBodyStyleIntent = {
         const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
         const slotValues = getSlotValues(filledSlots);
         const bodyStyle = get(slotValues, 'BodyStyle.resolved');
-        const speechText = `You have requested ${bodyStyle}. Your preferences will be updated.`;
+        let speechText = '';
+
+        if (bodyStyle === undefined) {
+            speechText = 'Unable to understand body style request. To try again, say, Alexa update body styles.';
+        } else {
+            speechText = `You have requested to search ${bodyStyle} body styles. Your preferences will be updated.`;
+
+            // Update the user's preferences
+            dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'array', 'bodyStyles', bodyStyle);
+        }
 
       return handlerInput.responseBuilder
         .speak(speechText)
@@ -195,10 +213,19 @@ const CompleteUpdateMaxPriceIntent = {
         && handlerInput.requestEnvelope.request.intent.name === 'UpdateMaxPriceIntent';
     },
     handle(handlerInput) {
-      const speechText = `Your preferencs have been updated. Say 'Aexa, find my car now' to start searching!`;
       const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
+      const slotValues = getSlotValues(filledSlots);
+      const maxPrice = get(slotValues, 'MaxPrice.resolved');
+      let speechText = '';
 
-      console.log(`The filled slots: ${JSON.stringify(filledSlots)}`);
+      if (maxPrice === undefined) {
+          speechText = 'Unable to understand max price request. To try again, say, Alexa update max price.';
+      } else {
+          speechText = `You have requested to set a max price of ${maxPrice} thousand. Your preferences will be updated.`;
+
+          // Update the user's preferences
+          dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'maxPrice', maxPrice + '000');
+      }
 
       return handlerInput.responseBuilder
         .speak(speechText)
@@ -225,10 +252,19 @@ const CompleteUpdateMaxMileageIntent = {
         && handlerInput.requestEnvelope.request.intent.name === 'UpdateMaxMileageIntent';
     },
     handle(handlerInput) {
-      const speechText = `Your preferencs have been updated. Say 'Aexa, find my car now' to start searching!`;
-      const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
+        const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
+        const slotValues = getSlotValues(filledSlots);
+        const maxMileage = get(slotValues, 'MaxMileage.resolved');
+        let speechText = '';
 
-      console.log(`The filled slots: ${JSON.stringify(filledSlots)}`);
+        if (maxMileage === undefined) {
+            speechText = 'Unable to understand max mileage request. To try again, say, Alexa update max mileage.';
+        } else {
+            speechText = `You have requested to set a max mileage of ${maxMileage} thousand. Your preferences will be updated.`;
+
+            // Update the user's preferences
+            dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'maxMileage', maxMileage + '000');
+        }
 
       return handlerInput.responseBuilder
         .speak(speechText)
@@ -255,10 +291,19 @@ const CompleteUpdateMinYearIntent = {
         && handlerInput.requestEnvelope.request.intent.name === 'UpdateMinYearIntent';
     },
     handle(handlerInput) {
-      const speechText = `Your preferencs have been updated. Say 'Aexa, find my car now' to start searching!`;
-      const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
+        const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
+        const slotValues = getSlotValues(filledSlots);
+        const minYear = get(slotValues, 'MinYear.resolved');
+        let speechText = '';
 
-      console.log(`The filled slots: ${JSON.stringify(filledSlots)}`);
+        if (minYear === undefined) {
+            speechText = 'Unable to understand minimum year request. To try again, say, Alexa update min year.';
+        } else {
+            speechText = `You have requested to set a minimum search year of ${minYear}. Your preferences will be updated.`;
+
+            // Update the user's preferences
+            dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'minYear', minYear);
+        }
 
       return handlerInput.responseBuilder
         .speak(speechText)
@@ -272,7 +317,7 @@ const HelpIntentHandler = {
         && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.HelpIntent';
     },
     handle(handlerInput) {
-      const speechText = 'Sorry, I am new to this.!';
+      const speechText = 'To get started simply say Alexa show me a car. Or you can update your preferences. See the app help section for an exhaustive guide.';
 
       return handlerInput.responseBuilder
         .speak(speechText)

@@ -6,7 +6,7 @@ module.exports = (email = 'test.user@alexa.ai') => {
             minYear: 2005,
             bodyStyles: ['suv', 'sedan'],
             conditions: ['used'],
-            zip: '30331'
+            zip: 30331
         },
         dislikes: [
             {
