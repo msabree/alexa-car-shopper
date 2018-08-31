@@ -22,7 +22,7 @@ const saveUserBasePreferences = (requestEnvelope, action = 'add', attributeValue
         console.log(storedUserPreferences);
         const basePreferencesPath = 'basePreferences';
         let clonedStoredUserPreferences = cloneDeep(storedUserPreferences);
-        let storedAttributeValue = get(storedUserPreferences, attributeKey);
+        let storedAttributeValue = get(clonedStoredUserPreferences, attributeKey);
 
         console.log(action, attributeKey, attributeValue);
 
@@ -39,7 +39,7 @@ const saveUserBasePreferences = (requestEnvelope, action = 'add', attributeValue
                 } else {
                     storedAttributeValue = attributeValue;
                 }
-                set(clonedStoredUserPreferences, [basePreferencesPath, attributeKey], attributeValue);
+                set(clonedStoredUserPreferences, [basePreferencesPath, attributeKey], storedAttributeValue);
             }
         } else if (action === 'clear') {
             if (attributeValueType === 'array') {
@@ -60,7 +60,7 @@ const saveUserBasePreferences = (requestEnvelope, action = 'add', attributeValue
 
 // Update likes/dislikes -> this will make our algorithm preference engine smarter
 const updateCarSearchHistory = (requestEnvelope, carResponseType, objCarDetails) => {
-    getStoredUserPreferences()
+    getStoredUserPreferences(requestEnvelope)
     .then((storedUserPreferences) => {
         let clonedStoredUserPreferences = cloneDeep(storedUserPreferences);
         let savedCollection = get(clonedStoredUserPreferences, carResponseType, []);
@@ -73,11 +73,29 @@ const updateCarSearchHistory = (requestEnvelope, carResponseType, objCarDetails)
     });
 };
 
+// Get/Set last shown car -> hack for temporary persistence between intents
+const lastShownCar = (requestEnvelope, objCarDetails) => {
+    getStoredUserPreferences(requestEnvelope)
+    .then((storedUserPreferences) => {
+        let clonedStoredUserPreferences = cloneDeep(storedUserPreferences);
+        if (objCarDetails === undefined) {
+            // Getter
+            return Promise.resolve(get(clonedStoredUserPreferences, 'lastShownCar'));
+        } else {
+            // Setter
+            set(clonedStoredUserPreferences, 'lastShownCar', objCarDetails);
+            return dynamoDbPersistenceAdapter.saveAttributes(requestEnvelope, clonedStoredUserPreferences);
+        }
+    })
+    .catch((err) => {
+        return Promise.reject(err);
+    });
+};
+
 // The userId is embedded in the requestEnvelope by default.
 const getStoredUserPreferences = (requestEnvelope) => {
     return new Promise((resolve, reject) => {
-        const getAttributesPromise = dynamoDbPersistenceAdapter.getAttributes(requestEnvelope);
-        getAttributesPromise.then((storedUserPreferences) => {
+        dynamoDbPersistenceAdapter.getAttributes(requestEnvelope).then((storedUserPreferences) => {
             resolve(storedUserPreferences);
         })
         .catch((err) => {
@@ -88,6 +106,7 @@ const getStoredUserPreferences = (requestEnvelope) => {
 };
 
 module.exports = {
+    lastShownCar,
     saveUserBasePreferences,
     updateCarSearchHistory,
     getStoredUserPreferences,

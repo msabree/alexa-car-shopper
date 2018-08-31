@@ -6,9 +6,6 @@ const carApiSearch = require('./helper/api');
 const getSlotValues = require('./helper/getSlotValues');
 const dynamoDB = require('./helper/dynamoDB');
 
-// TEST
-const storedUserPreferencesTEST = require('./data/samplePreferenceModel');
-
 const APP_NAME = 'Alexa - Car Shopper';
 
 const LaunchRequestHandler = {
@@ -39,30 +36,35 @@ const SearchCarsNowIntent = {
         && handlerInput.requestEnvelope.request.dialogState !== 'COMPLETED';
     },
     handle(handlerInput) {
-        // Pull the stored user preferences from the database
-        const getUserPreferencesPromise = getStoredUserPreferences(handlerInput.requestEnvelope);
-        console.log(typeof getUserPreferencesPromise);
+        return dynamoDB.getStoredUserPreferences(handlerInput.requestEnvelope)
+        .then(() => {
+            return handlerInput.responseBuilder
+                .speak('HELLO WORLD')
+                .withSimpleCard(APP_NAME, 'HELLO WORLD')
+                .getResponse();
+        });
 
-        // increment by 100 if no results found
-        const startIndex = 0;
+        // // increment by 100 if no results found
+        // const startIndex = 0;
 
-        // Perform car search
-        const results = carApiSearch(storedUserPreferencesTEST, startIndex);
+        // // Perform car search
+        // const results = carApiSearch(storedUserPreferences, startIndex);
 
-        // for testing we'll use the first item
-        const firstListingForTest = results.alphaShowcase[0];
+        // // for testing we'll use the first item
+        // const firstListingForTest = results.alphaShowcase[0];
 
-        // parse results
-        const description = get(firstListingForTest, 'description.label', 'car');
-        const miles = get(firstListingForTest, 'specifications.mileage.value', 'miles unknown');
-        let price = get(firstListingForTest, 'pricingDetail.salePrice', 'price unknown');
+        // const description = get(firstListingForTest, 'description.label', 'car');
+        // const miles = get(firstListingForTest, 'specifications.mileage.value', 'miles unknown');
+        // let price = get(firstListingForTest, 'pricingDetail.salePrice', 'price unknown');
 
-        const speechText = `I found a ${description} with ${miles} miles at ${price} dollars.`;
+        // const speechText = `I found a ${description} with ${miles} miles at ${price} dollars.`;
 
-      return handlerInput.responseBuilder
-        .speak(speechText)
-        .withSimpleCard(APP_NAME, speechText)
-        .getResponse();
+        // await dynamoDB.lastShownCar(handlerInput.requestEnvelope, firstListingForTest);
+
+        // return handlerInput.responseBuilder
+        //     .speak(speechText)
+        //     .withSimpleCard(APP_NAME, speechText)
+        //     .getResponse();
     },
 };
 
@@ -121,20 +123,11 @@ const CompleteUpdateMakeIntent = {
         if (make === undefined) {
             speechText = 'Unable to determine make. To try again, say, Alexa update make.';
         } else {
-            const cityStateArray = city.split(' '); // city state
-            const location = zipcodes.lookupByName(cityStateArray[0], cityStateArray[1])[0];
-            zip = get(location, 'zip');
+            speechText = `You have requested to search for cars made by ${make}. Your preferences will be updated.`;
 
-            if (zip === undefined) {
-                zip = 30318;
-                speechText = 'Unable to determine city, setting to Atlanta Georgia. To try again, say, Alexa update search city.';
-            } else {
-                speechText = `You have requested ${city} which maps to zipcode ${zip}. Your preferences will be updated.`;
-            }
+            // Update the user's preferences
+            dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'array', 'make', make);
         }
-
-        // Update the user's preferences
-        dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'zip', zip);
 
         return handlerInput.responseBuilder
             .speak(speechText)
