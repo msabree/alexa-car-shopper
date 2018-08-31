@@ -19,7 +19,7 @@ const LaunchRequestHandler = {
         const welcomeOptions = [
             'Hey, my name is Alexa and I will help you find the perfect car.',
             `Hey, there are lots of great cars for sale, let's find you one.`,
-            `Ready to buy a car? I can help!`,
+            `Ready to buy a car? I can help you with that!`,
             `Welcome to Alexa Car Shopper. Let's get started on your car search!`,
         ];
         const speechText = welcomeOptions[Math.floor(Math.random() * welcomeOptions.length)];
@@ -27,7 +27,7 @@ const LaunchRequestHandler = {
       return handlerInput.responseBuilder
         .speak(speechText)
         .reprompt(speechText)
-        .withSimpleCard(APP_NAME, speechText)
+        .withStandardCard(APP_NAME, speechText, 'https://lh5.googleusercontent.com/6dynkppIJoHsGtB-Zmzl-4wyuXfiRQOLU1jIss89913NlUfwiFwA91eiksjNdYunXHIPtzWGR59jxg=w1440-h703', 'https://lh5.googleusercontent.com/6dynkppIJoHsGtB-Zmzl-4wyuXfiRQOLU1jIss89913NlUfwiFwA91eiksjNdYunXHIPtzWGR59jxg=w1440-h703')
         .getResponse();
     },
 };
@@ -35,7 +35,8 @@ const LaunchRequestHandler = {
 const SearchCarsNowIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'SearchCarsNowIntent';
+        && handlerInput.requestEnvelope.request.intent.name === 'SearchCarsNowIntent'
+        && handlerInput.requestEnvelope.request.dialogState !== 'COMPLETED';
     },
     handle(handlerInput) {
         // Pull the stored user preferences from the database
@@ -56,12 +57,88 @@ const SearchCarsNowIntent = {
         const miles = get(firstListingForTest, 'specifications.mileage.value', 'miles unknown');
         let price = get(firstListingForTest, 'pricingDetail.salePrice', 'price unknown');
 
-        const speechText = `I found a ${description} with ${miles} miles at ${price} dollars. Would you like me to send you the full description?`;
+        const speechText = `I found a ${description} with ${miles} miles at ${price} dollars.`;
 
       return handlerInput.responseBuilder
         .speak(speechText)
         .withSimpleCard(APP_NAME, speechText)
         .getResponse();
+    },
+};
+
+const CompleteSearchCarsNowIntent = {
+    canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+        && handlerInput.requestEnvelope.request.intent.name === 'UpdateCityIntent';
+    },
+    handle(handlerInput) {
+        const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
+        const slotValues = getSlotValues(filledSlots);
+        const saveResponse = get(slotValues, 'SaveResponse.resolved');
+        let speechText;
+        if (saveResponse === undefined) {
+            speechText = 'Unable to determine your choice, your like and dislike history was not affected. You can continue your search as normal.';
+        } else {
+            if (saveResponse === 'yes') {
+                // Update the user's preferences
+                dynamoDB.updateCarSearchHistory(handlerInput.requestEnvelope, 'likes', {car: 'jag'});
+            } else if (saveResponse === 'no') {
+                dynamoDB.updateCarSearchHistory(handlerInput.requestEnvelope, 'dislikes', {car: 'volvo'});
+            } else {
+                speechText = 'Unable to determine your choice, your like and dislike history was not affected. You can continue your search as normal.';
+            }
+        }
+
+        return handlerInput.responseBuilder
+            .speak(speechText)
+            .getResponse();
+    },
+};
+
+const UpdateMakeIntent = {
+    canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+        && handlerInput.requestEnvelope.request.intent.name === 'UpdateMakeIntent'
+        && handlerInput.requestEnvelope.request.dialogState !== 'COMPLETED';
+    },
+    handle(handlerInput) {
+      return handlerInput.responseBuilder
+        .addDelegateDirective(handlerInput.requestEnvelope.request.intent)
+        .getResponse();
+    },
+};
+
+const CompleteUpdateMakeIntent = {
+    canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+        && handlerInput.requestEnvelope.request.intent.name === 'UpdateMakeIntent';
+    },
+    handle(handlerInput) {
+        const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
+        const slotValues = getSlotValues(filledSlots);
+        const make = get(slotValues, 'Make.resolved');
+        let speechText;
+        if (make === undefined) {
+            speechText = 'Unable to determine make. To try again, say, Alexa update make.';
+        } else {
+            const cityStateArray = city.split(' '); // city state
+            const location = zipcodes.lookupByName(cityStateArray[0], cityStateArray[1])[0];
+            zip = get(location, 'zip');
+
+            if (zip === undefined) {
+                zip = 30318;
+                speechText = 'Unable to determine city, setting to Atlanta Georgia. To try again, say, Alexa update search city.';
+            } else {
+                speechText = `You have requested ${city} which maps to zipcode ${zip}. Your preferences will be updated.`;
+            }
+        }
+
+        // Update the user's preferences
+        dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'zip', zip);
+
+        return handlerInput.responseBuilder
+            .speak(speechText)
+            .getResponse();
     },
 };
 
@@ -79,9 +156,6 @@ const UpdateCityIntent = {
 };
 
 const CompleteUpdateCityIntent = {
-
-    // Get stored user preferences whenever doing an update.
-
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
         && handlerInput.requestEnvelope.request.intent.name === 'UpdateCityIntent';
@@ -371,6 +445,9 @@ exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
         SearchCarsNowIntent,
+        CompleteSearchCarsNowIntent,
+        UpdateMakeIntent,
+        CompleteUpdateMakeIntent,
         UpdateConditionsIntent,
         UpdateBodyStyleIntent,
         UpdateMaxMileageIntent,

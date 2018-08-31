@@ -54,7 +54,21 @@ const saveUserBasePreferences = (requestEnvelope, action = 'add', attributeValue
         return dynamoDbPersistenceAdapter.saveAttributes(requestEnvelope, clonedStoredUserPreferences);
     })
     .catch((err) => {
-        console.log(err.message);
+        return Promise.reject(err);
+    });
+};
+
+// Update likes/dislikes -> this will make our algorithm preference engine smarter
+const updateCarSearchHistory = (requestEnvelope, carResponseType, objCarDetails) => {
+    getStoredUserPreferences()
+    .then((storedUserPreferences) => {
+        let clonedStoredUserPreferences = cloneDeep(storedUserPreferences);
+        let savedCollection = get(clonedStoredUserPreferences, carResponseType, []);
+        savedCollection.push(objCarDetails);
+        set(clonedStoredUserPreferences, carResponseType, savedCollection);
+        return dynamoDbPersistenceAdapter.saveAttributes(requestEnvelope, clonedStoredUserPreferences);
+    })
+    .catch((err) => {
         return Promise.reject(err);
     });
 };
@@ -75,5 +89,6 @@ const getStoredUserPreferences = (requestEnvelope) => {
 
 module.exports = {
     saveUserBasePreferences,
+    updateCarSearchHistory,
     getStoredUserPreferences,
 };
