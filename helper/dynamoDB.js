@@ -75,10 +75,11 @@ const updateCarSearchHistory = (requestEnvelope, carResponseType, objCarDetails)
 
 // Get/Set last shown car -> hack for temporary persistence between intents
 const lastShownCar = (requestEnvelope, objCarDetails) => {
-    getStoredUserPreferences(requestEnvelope)
+    return getStoredUserPreferences(requestEnvelope)
     .then((storedUserPreferences) => {
         let clonedStoredUserPreferences = cloneDeep(storedUserPreferences);
         if (objCarDetails === undefined) {
+            console.log(get(clonedStoredUserPreferences, 'lastShownCar'));
             // Getter
             return Promise.resolve(get(clonedStoredUserPreferences, 'lastShownCar'));
         } else {

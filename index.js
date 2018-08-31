@@ -5,12 +5,12 @@
 const Alexa = require('ask-sdk-core');
 const zipcodes = require('zipcodes');
 const get = require('lodash/get');
-const shuffle = require('lodash/shuffle');
 const carApiSearch = require('./helper/carSearchApi');
 const getSlotValues = require('./helper/getSlotValues');
 const dynamoDB = require('./helper/dynamoDB');
 
 const APP_NAME = 'Alexa - Car Shopper';
+const LOGO_URL = 'https://s3.amazonaws.com/alexa-car-shopper/logo.png';
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -28,7 +28,7 @@ const LaunchRequestHandler = {
       return handlerInput.responseBuilder
         .speak(speechText)
         .reprompt(speechText)
-        .withStandardCard(APP_NAME, speechText, 'https://lh5.googleusercontent.com/6dynkppIJoHsGtB-Zmzl-4wyuXfiRQOLU1jIss89913NlUfwiFwA91eiksjNdYunXHIPtzWGR59jxg=w1440-h703', 'https://lh5.googleusercontent.com/6dynkppIJoHsGtB-Zmzl-4wyuXfiRQOLU1jIss89913NlUfwiFwA91eiksjNdYunXHIPtzWGR59jxg=w1440-h703')
+        .withStandardCard(APP_NAME, speechText, LOGO_URL, LOGO_URL)
         .getResponse();
     },
 };
@@ -36,8 +36,7 @@ const LaunchRequestHandler = {
 const SearchCarsNowIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'SearchCarsNowIntent'
-        && handlerInput.requestEnvelope.request.dialogState !== 'COMPLETED';
+        && handlerInput.requestEnvelope.request.intent.name === 'SearchCarsNowIntent';
     },
     async handle(handlerInput) {
         const storedUserPreferences = await dynamoDB.getStoredUserPreferences(handlerInput.requestEnvelope);
@@ -46,30 +45,49 @@ const SearchCarsNowIntent = {
         const startIndex = 0;
 
         // Perform car search
+        // returns static data for testing
         const results = carApiSearch(storedUserPreferences, startIndex);
 
-        // for testing we'll use the first item
-        const firstListingForTest = shuffle(results.alphaShowcase)[0];
+        const carDetails = results.alphaShowcase[Math.floor(Math.random() * results.alphaShowcase.length)];
 
-        const description = get(firstListingForTest, 'description.label', 'car');
-        const miles = get(firstListingForTest, 'specifications.mileage.value', 'miles unknown');
-        let price = get(firstListingForTest, 'pricingDetail.salePrice', 'price unknown');
+        const description = get(carDetails, 'description.label', 'car');
+        const miles = get(carDetails, 'specifications.mileage.value', 'miles unknown');
+        const price = get(carDetails, 'pricingDetail.salePrice', 'price unknown');
+        const imageText = get(carDetails, 'images.sources[0].title', '');
+        const imageSrc = get(carDetails, 'images.sources[0].src', '');
 
-        const speechText = `I found a ${description} with ${miles} miles at ${price} dollars.`;
+        const speechText = `
+            I found a ${description} with ${miles} miles for a sales price of $${price}.
+            To add this car to your like or dislike history you can say 'save response'.
+            Otherwise you can continue searching or exit the app.
+        `;
 
-        await dynamoDB.lastShownCar(handlerInput.requestEnvelope, firstListingForTest);
+        await dynamoDB.lastShownCar(handlerInput.requestEnvelope, carDetails);
 
         return handlerInput.responseBuilder
             .speak(speechText)
-            .withSimpleCard(APP_NAME, speechText)
+            .withStandardCard(APP_NAME, `${imageText} | ${miles} miles | $${price}`, imageSrc, imageSrc)
             .getResponse();
     },
 };
 
-const CompleteSearchCarsNowIntent = {
+const SaveResponseIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'UpdateCityIntent';
+        && handlerInput.requestEnvelope.request.intent.name === 'SaveResponseIntent'
+        && handlerInput.requestEnvelope.request.dialogState !== 'COMPLETED';
+    },
+    handle(handlerInput) {
+      return handlerInput.responseBuilder
+        .addDelegateDirective(handlerInput.requestEnvelope.request.intent)
+        .getResponse();
+    },
+};
+
+const CompleteSaveResponseIntent = {
+    canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+        && handlerInput.requestEnvelope.request.intent.name === 'SaveResponseIntent';
     },
     async handle(handlerInput) {
         const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
@@ -81,11 +99,14 @@ const CompleteSearchCarsNowIntent = {
         } else {
             // Fetch the last searched car. This will be the correct context for the response.
             const carDetails = await dynamoDB.lastShownCar(handlerInput.requestEnvelope);
+            console.log(carDetails);
 
             if (saveResponse === 'yes') {
                 // Update the user's preferences
+                speechText = 'This vehicle has been saved to your liked history. You can continue searching when ready.';
                 dynamoDB.updateCarSearchHistory(handlerInput.requestEnvelope, 'likes', carDetails);
             } else if (saveResponse === 'no') {
+                speechText = 'Dislike confirmed. I will use that to show you better cars next time. You can continue searching when ready.';
                 dynamoDB.updateCarSearchHistory(handlerInput.requestEnvelope, 'dislikes', carDetails);
             } else {
                 speechText = 'Unable to determine your choice, your like and dislike history was not affected. You can continue your search as normal.';
@@ -385,12 +406,17 @@ const HelpIntentHandler = {
         && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.HelpIntent';
     },
     handle(handlerInput) {
-      const speechText = 'To get started simply say Alexa show me a car. Or you can update your preferences. See the app help section for an exhaustive guide.';
+      const speechText = `
+        Here is a complete list of commands...
+        At any time, to start the app, say 'Alexa, Start Car Shopper.'
+        To perform a car search, say 'Alexa, search now.'
+        To update preferences you can say things like, 'Alexa, update city.'
+      `;
 
       return handlerInput.responseBuilder
         .speak(speechText)
         .reprompt(speechText)
-        .withSimpleCard(APP_NAME, speechText)
+        .withStandardCard(APP_NAME, speechText, LOGO_URL, LOGO_URL)
         .getResponse();
     },
 };
@@ -402,11 +428,11 @@ const CancelAndStopIntentHandler = {
             || handlerInput.requestEnvelope.request.intent.name === 'AMAZON.StopIntent');
     },
     handle(handlerInput) {
-        const speechText = 'Your preferences are saved. You can resume your search where you left off. Good bye';
+        const speechText = 'Your preferences are saved. You can resume your search where you left off. Good bye!';
 
         return handlerInput.responseBuilder
             .speak(speechText)
-            .withSimpleCard(APP_NAME, speechText)
+            .withStandardCard(APP_NAME, speechText, LOGO_URL, LOGO_URL)
             .getResponse();
     },
 };
@@ -439,7 +465,8 @@ exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
         SearchCarsNowIntent,
-        CompleteSearchCarsNowIntent,
+        SaveResponseIntent,
+        CompleteSaveResponseIntent,
         UpdateMakeIntent,
         CompleteUpdateMakeIntent,
         UpdateConditionsIntent,

@@ -38,7 +38,7 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
         'distanceASC',
     ];
 
-    const sortBy = Math.floor(Math.random() * sortByOptions.length);
+    const sortBy = sortByOptions[Math.floor(Math.random() * sortByOptions.length)];
 
     // Base url w/ zip (zip is pretty much required)
     // End at 2019, rememeber to update next year :)
