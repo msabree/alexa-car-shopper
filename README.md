@@ -13,10 +13,15 @@ Perform car search (only requires a city be set)
 Set base preferences to improve suggestion algorithm (all base prefences are optional except city)
 These are persisted. you can quit and come back at any time  
   > Alexa, update city (required)
+   
   > Alexa, update body styles
+   
   > Alexa, update min year
+   
   > Alexa, update conditions
+   
   > Alexa, update max price
+   
   > Alexa, update min year
 
 Reset base preferences and clear like/dislike history
