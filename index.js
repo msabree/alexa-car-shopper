@@ -1,8 +1,12 @@
 /* eslint max-len: 0 */
+/* eslint-disable  func-names */
+/* eslint-disable  no-console */
+/* eslint-disable  no-restricted-syntax */
 const Alexa = require('ask-sdk-core');
 const zipcodes = require('zipcodes');
 const get = require('lodash/get');
-const carApiSearch = require('./helper/api');
+const shuffle = require('lodash/shuffle');
+const carApiSearch = require('./helper/carSearchApi');
 const getSlotValues = require('./helper/getSlotValues');
 const dynamoDB = require('./helper/dynamoDB');
 
@@ -35,36 +39,30 @@ const SearchCarsNowIntent = {
         && handlerInput.requestEnvelope.request.intent.name === 'SearchCarsNowIntent'
         && handlerInput.requestEnvelope.request.dialogState !== 'COMPLETED';
     },
-    handle(handlerInput) {
-        return dynamoDB.getStoredUserPreferences(handlerInput.requestEnvelope)
-        .then(() => {
-            return handlerInput.responseBuilder
-                .speak('HELLO WORLD')
-                .withSimpleCard(APP_NAME, 'HELLO WORLD')
-                .getResponse();
-        });
+    async handle(handlerInput) {
+        const storedUserPreferences = await dynamoDB.getStoredUserPreferences(handlerInput.requestEnvelope);
 
-        // // increment by 100 if no results found
-        // const startIndex = 0;
+        // increment by 100 if no results found
+        const startIndex = 0;
 
-        // // Perform car search
-        // const results = carApiSearch(storedUserPreferences, startIndex);
+        // Perform car search
+        const results = carApiSearch(storedUserPreferences, startIndex);
 
-        // // for testing we'll use the first item
-        // const firstListingForTest = results.alphaShowcase[0];
+        // for testing we'll use the first item
+        const firstListingForTest = shuffle(results.alphaShowcase)[0];
 
-        // const description = get(firstListingForTest, 'description.label', 'car');
-        // const miles = get(firstListingForTest, 'specifications.mileage.value', 'miles unknown');
-        // let price = get(firstListingForTest, 'pricingDetail.salePrice', 'price unknown');
+        const description = get(firstListingForTest, 'description.label', 'car');
+        const miles = get(firstListingForTest, 'specifications.mileage.value', 'miles unknown');
+        let price = get(firstListingForTest, 'pricingDetail.salePrice', 'price unknown');
 
-        // const speechText = `I found a ${description} with ${miles} miles at ${price} dollars.`;
+        const speechText = `I found a ${description} with ${miles} miles at ${price} dollars.`;
 
-        // await dynamoDB.lastShownCar(handlerInput.requestEnvelope, firstListingForTest);
+        await dynamoDB.lastShownCar(handlerInput.requestEnvelope, firstListingForTest);
 
-        // return handlerInput.responseBuilder
-        //     .speak(speechText)
-        //     .withSimpleCard(APP_NAME, speechText)
-        //     .getResponse();
+        return handlerInput.responseBuilder
+            .speak(speechText)
+            .withSimpleCard(APP_NAME, speechText)
+            .getResponse();
     },
 };
 
@@ -73,7 +71,7 @@ const CompleteSearchCarsNowIntent = {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
         && handlerInput.requestEnvelope.request.intent.name === 'UpdateCityIntent';
     },
-    handle(handlerInput) {
+    async handle(handlerInput) {
         const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
         const slotValues = getSlotValues(filledSlots);
         const saveResponse = get(slotValues, 'SaveResponse.resolved');
@@ -81,11 +79,14 @@ const CompleteSearchCarsNowIntent = {
         if (saveResponse === undefined) {
             speechText = 'Unable to determine your choice, your like and dislike history was not affected. You can continue your search as normal.';
         } else {
+            // Fetch the last searched car. This will be the correct context for the response.
+            const carDetails = await dynamoDB.lastShownCar(handlerInput.requestEnvelope);
+
             if (saveResponse === 'yes') {
                 // Update the user's preferences
-                dynamoDB.updateCarSearchHistory(handlerInput.requestEnvelope, 'likes', {car: 'jag'});
+                dynamoDB.updateCarSearchHistory(handlerInput.requestEnvelope, 'likes', carDetails);
             } else if (saveResponse === 'no') {
-                dynamoDB.updateCarSearchHistory(handlerInput.requestEnvelope, 'dislikes', {car: 'volvo'});
+                dynamoDB.updateCarSearchHistory(handlerInput.requestEnvelope, 'dislikes', carDetails);
             } else {
                 speechText = 'Unable to determine your choice, your like and dislike history was not affected. You can continue your search as normal.';
             }

@@ -26,12 +26,25 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
     // Need a zip, default to Atlanta
     const zip = get(basePreferences, 'zip', 30318);
 
+    // Randomize sort by to shuffle return for subsequent calls.
+    const sortByOptions = [
+        'mileageASC',
+        'mileageDESC',
+        'relevance',
+        'derivedpriceASC',
+        'derivedpriceDESC',
+        'yearASC',
+        'yearDESC',
+        'distanceASC',
+    ];
+
+    const sortBy = Math.floor(Math.random() * sortByOptions.length);
+
     // Base url w/ zip (zip is pretty much required)
     // End at 2019, rememeber to update next year :)
     // Search 50 miles since that is about how far i think people will want to drive.
-    // Sort by mileage ascending, better cars imo have lower miles
     // If we don't match anything on the first search we can pass in startIndex + 1
-    let baseUrl = `https://www.autotrader.com/rest/v1/alphashowcase/base?zip=${zip}&sortBy=mileageASC&endYear=2019&searchRadius=50&firstRecord=${startIndex}`;
+    let baseUrl = `https://www.autotrader.com/rest/v1/alphashowcase/base?zip=${zip}&sortBy=${sortBy}&endYear=2019&searchRadius=50&firstRecord=${startIndex}`;
 
     // Round up to nearest autotrader mile for query to work
     // then filter results to match user specification exactly
