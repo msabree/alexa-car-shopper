@@ -23,6 +23,8 @@ These are persisted. you can quit and come back at any time
   > Alexa, update max price
    
   > Alexa, update min year
+ 
+  > Alexa, update make
 
 Reset base preferences and clear like/dislike history
-  > Alexa, reset app
+  > Alexa, reset app data

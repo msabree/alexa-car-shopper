@@ -55,6 +55,8 @@ const SearchCarsNowIntent = {
         const price = get(carDetails, 'pricingDetail.salePrice', 'price unknown');
         const imageText = get(carDetails, 'images.sources[0].title', '');
         const imageSrc = get(carDetails, 'images.sources[0].src', '');
+        const ownerPhone = get(carDetails, 'owner.phone.value', 'Phone Unavailable');
+        const ownerText = get(carDetails, 'owner.name', 'Owner Unknown');
 
         const speechText = `
             I found a ${description} with ${miles} miles for a sales price of $${price}.
@@ -62,11 +64,21 @@ const SearchCarsNowIntent = {
             Otherwise you can continue searching or exit the app.
         `;
 
+        const showText = `
+            ${imageText}
+
+            ${miles} miles | $${price}
+
+            ${ownerText}
+
+            Phone: ${ownerPhone}
+        `;
+
         await dynamoDB.lastShownCar(handlerInput.requestEnvelope, carDetails);
 
         return handlerInput.responseBuilder
             .speak(speechText)
-            .withStandardCard(APP_NAME, `${imageText} | ${miles} miles | $${price}`, imageSrc, imageSrc)
+            .withStandardCard(APP_NAME, showText, imageSrc, imageSrc)
             .getResponse();
     },
 };
@@ -400,6 +412,24 @@ const CompleteUpdateMinYearIntent = {
     },
 };
 
+// Danger zone. Reset app entirely. Require confirmation
+const ResetAppDataIntent = {
+    canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+        && handlerInput.requestEnvelope.request.intent.name === 'ResetAppDataIntent';
+    },
+    async handle(handlerInput) {
+        await dynamoDB.resetAppData(handlerInput.requestEnvelope);
+
+        const speechText = 'Your app data has been cleared. You can begin again when ready.';
+
+        return handlerInput.responseBuilder
+            .speak(speechText)
+            .withStandardCard(APP_NAME, speechText, LOGO_URL, LOGO_URL)
+            .getResponse();
+    },
+};
+
 const HelpIntentHandler = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
@@ -407,9 +437,12 @@ const HelpIntentHandler = {
     },
     handle(handlerInput) {
       const speechText = `
-        Here is a complete list of commands...
+        Example phrases:
+        
         At any time, to start the app, say 'Alexa, Start Car Shopper.'
+
         To perform a car search, say 'Alexa, search now.'
+
         To update preferences you can say things like, 'Alexa, update city.'
       `;
 
@@ -481,6 +514,7 @@ exports.handler = Alexa.SkillBuilders.custom()
         CompleteUpdateMaxPriceIntent,
         CompleteUpdateMinYearIntent,
         CompleteUpdateCityIntent,
+        ResetAppDataIntent,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler

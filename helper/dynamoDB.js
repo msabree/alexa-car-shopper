@@ -106,9 +106,15 @@ const getStoredUserPreferences = (requestEnvelope) => {
     });
 };
 
+// Wipe it all!
+const resetAppData = (requestEnvelope) => {
+    return dynamoDbPersistenceAdapter.saveAttributes(requestEnvelope, {});
+};
+
 module.exports = {
     lastShownCar,
     saveUserBasePreferences,
     updateCarSearchHistory,
     getStoredUserPreferences,
+    resetAppData,
 };
