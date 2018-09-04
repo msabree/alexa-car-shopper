@@ -48,7 +48,7 @@ const SearchCarsNowIntent = {
         // returns static data for testing
         const results = carApiSearch(storedUserPreferences, startIndex);
 
-        const carDetails = results.alphaShowcase[Math.floor(Math.random() * results.alphaShowcase.length)];
+        const carDetails = results.listings[Math.floor(Math.random() * results.listings.length)];
 
         const description = get(carDetails, 'description.label', 'car');
         const miles = get(carDetails, 'specifications.mileage.value', 'miles unknown');
