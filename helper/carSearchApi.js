@@ -14,6 +14,7 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
     // Need a zip, default to Atlanta
     const zip = get(basePreferences, 'zip', 30318);
     const maxYear = 2021;
+    const maxRowsPerRequest = 50;
 
     // Randomize sort by to shuffle return for subsequent calls.
     const sortByOptions = [
@@ -37,7 +38,7 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
     // End at 2019, rememeber to update next year :)
     // Search 50 miles since that is about how far i think people will want to drive.
     // If we don't match anything on the first search we can pass in startIndex + 1
-    let baseUrl = `http://api.marketcheck.com/v1/search?api_key=${process.env.API_KEY}&start=${startIndex}&seller_type=dealer&radius=50&zip=${zip}&rows=100&sort_by=${sortBy}&sort_order=${sortOrder}`;
+    let baseUrl = `http://api.marketcheck.com/v1/search?api_key=${process.env.API_KEY}&start=${startIndex}&seller_type=dealer&radius=50&zip=${zip}&rows=${maxRowsPerRequest}&sort_by=${sortBy}&sort_order=${sortOrder}`;
 
     baseUrl += `&miles_range=0-${get(basePreferences, 'maxMileage', 400000)}`;
 
