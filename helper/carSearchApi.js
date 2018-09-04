@@ -42,6 +42,7 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
     baseUrl += `&miles_range=0-${get(basePreferences, 'maxMileage', 400000)}`;
 
     const minYear = get(basePreferences, 'minYear', 1981);
+    const years = [];
 
     for (let i = minYear; i < maxYear; i++) {
         years.push(i);
