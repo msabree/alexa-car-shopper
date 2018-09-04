@@ -247,7 +247,7 @@ const CompleteUpdateConditionsIntent = {
             speechText = `You have requested to search ${carCondition} vehicles. Your preferences will be updated.`;
 
             // Update the user's preferences
-            dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'array', 'conditions', carCondition);
+            dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'condition', carCondition);
         }
 
         return handlerInput.responseBuilder
