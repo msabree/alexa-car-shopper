@@ -50,13 +50,13 @@ const SearchCarsNowIntent = {
 
         const carDetails = results.listings[Math.floor(Math.random() * results.listings.length)];
 
-        const description = get(carDetails, 'description.label', 'car');
-        const miles = get(carDetails, 'specifications.mileage.value', 'miles unknown');
-        const price = get(carDetails, 'pricingDetail.salePrice', 'price unknown');
-        const imageText = get(carDetails, 'images.sources[0].title', '');
-        const imageSrc = get(carDetails, 'images.sources[0].src', '');
-        const ownerPhone = get(carDetails, 'owner.phone.value', 'Phone Unavailable');
-        const ownerText = get(carDetails, 'owner.name', 'Owner Unknown');
+        const description = get(carDetails, 'heading', 'car');
+        const miles = get(carDetails, 'miles', 'miles unknown');
+        const price = get(carDetails, 'price', 'price unknown');
+        const images = get(carDetails, 'media.photo_links', [LOGO_URL]);
+        const ownerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
+        let ownerText = get(carDetails, 'dealer.name', 'Owner Unknown');
+        ownerText = ownerText.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
 
         const speechText = `
             I found a ${description} with ${miles} miles for a sales price of $${price}.
@@ -65,11 +65,11 @@ const SearchCarsNowIntent = {
         `;
 
         const showText = `
-            ${imageText}
+            ${description}
 
             ${miles} miles | $${price}
 
-            ${ownerText}
+            Dealer: ${ownerText}
 
             Phone: ${ownerPhone}
         `;
@@ -78,7 +78,7 @@ const SearchCarsNowIntent = {
 
         return handlerInput.responseBuilder
             .speak(speechText)
-            .withStandardCard(APP_NAME, showText, imageSrc, imageSrc)
+            .withStandardCard(APP_NAME, showText, images[0], images[0])
             .getResponse();
     },
 };
@@ -89,10 +89,31 @@ const SaveResponseIntent = {
         && handlerInput.requestEnvelope.request.intent.name === 'SaveResponseIntent'
         && handlerInput.requestEnvelope.request.dialogState !== 'COMPLETED';
     },
-    handle(handlerInput) {
-      return handlerInput.responseBuilder
-        .addDelegateDirective(handlerInput.requestEnvelope.request.intent)
-        .getResponse();
+    async handle(handlerInput) {
+        const carDetails = await dynamoDB.lastShownCar(handlerInput.requestEnvelope);
+
+        const description = get(carDetails, 'heading', 'car');
+        const miles = get(carDetails, 'miles', 'miles unknown');
+        const price = get(carDetails, 'price', 'price unknown');
+        const images = get(carDetails, 'media.photo_links', [LOGO_URL, LOGO_URL]);
+        const ownerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
+        let ownerText = get(carDetails, 'dealer.name', 'Owner Unknown');
+        ownerText = ownerText.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
+
+        const showText = `
+            ${description}
+
+            ${miles} miles | $${price}
+
+            Dealer: ${ownerText}
+
+            Phone: ${ownerPhone}
+        `;
+
+        return handlerInput.responseBuilder
+            .addDelegateDirective(handlerInput.requestEnvelope.request.intent)
+            .withStandardCard(APP_NAME, showText, images[1], images[1])
+            .getResponse();
     },
 };
 
@@ -106,12 +127,31 @@ const CompleteSaveResponseIntent = {
         const slotValues = getSlotValues(filledSlots);
         const saveResponse = get(slotValues, 'SaveResponse.resolved');
         let speechText;
+        let images = [LOGO_URL, LOGO_URL, LOGO_URL];
+        let showText = '';
         if (saveResponse === undefined) {
             speechText = 'Unable to determine your choice, your like and dislike history was not affected. You can continue your search as normal.';
         } else {
             // Fetch the last searched car. This will be the correct context for the response.
             const carDetails = await dynamoDB.lastShownCar(handlerInput.requestEnvelope);
-            console.log(carDetails);
+
+            const description = get(carDetails, 'heading', 'car');
+            const miles = get(carDetails, 'miles', 'miles unknown');
+            const price = get(carDetails, 'price', 'price unknown');
+            images = get(carDetails, 'media.photo_links', []);
+            const ownerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
+            let ownerText = get(carDetails, 'dealer.name', 'Owner Unknown');
+            ownerText = ownerText.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
+
+            showText = `
+                ${description}
+    
+                ${miles} miles | $${price}
+    
+                Dealer: ${ownerText}
+    
+                Phone: ${ownerPhone}
+            `;
 
             if (saveResponse === 'yes') {
                 // Update the user's preferences
@@ -127,6 +167,7 @@ const CompleteSaveResponseIntent = {
 
         return handlerInput.responseBuilder
             .speak(speechText)
+            .withStandardCard(APP_NAME, showText, images[2], images[2])
             .getResponse();
     },
 };
