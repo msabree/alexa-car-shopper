@@ -18,9 +18,16 @@ const includes = require('lodash/includes');
 //     transmission: 5,
 // };
 
+// test
 const computeScore = (objCarDetais) => {
     if (objCarDetais.make.toLowerCase() === 'dodge') {
         return 100;
+    } else if (objCarDetais.make.toLowerCase() === 'honda') {
+        return 90;
+    } else if (objCarDetais.make.toLowerCase() === 'ford') {
+        return 80;
+    } else if (objCarDetais.make.toLowerCase() === 'chevrolet') {
+        return 70;
     }
     return 0;
 };
@@ -45,6 +52,8 @@ const findTopResult = (arrResults, objStoredUserData) => {
     for (let i = 0; i < dislikedCars.length; i++) {
         alreadyShownIds.push(dislikedCars[i].id);
     }
+
+    console.log('Already shown --->', alreadyShownIds);
 
     let maxScoreIndex = -1;
     let maxScore = 0;

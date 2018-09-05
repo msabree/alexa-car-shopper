@@ -8,6 +8,7 @@ const get = require('lodash/get');
 const carApiSearch = require('./helper/carSearchApi');
 const getSlotValues = require('./helper/getSlotValues');
 const dynamoDB = require('./helper/dynamoDB');
+const preferenceEngine = require('./helper/preferenceEngine');
 
 const APP_NAME = 'Alexa - Car Shopper';
 const LOGO_URL = 'https://s3.amazonaws.com/alexa-car-shopper/logo.png';
@@ -48,7 +49,7 @@ const SearchCarsNowIntent = {
         // returns static data for testing
         const results = carApiSearch(storedUserPreferences, startIndex);
 
-        const carDetails = results.listings[Math.floor(Math.random() * results.listings.length)];
+        const carDetails = preferenceEngine.findTopResult(results.listings, storedUserPreferences);
 
         const description = get(carDetails, 'heading', 'car');
         const miles = get(carDetails, 'miles', 'miles unknown');
