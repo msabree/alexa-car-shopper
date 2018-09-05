@@ -2,7 +2,7 @@
 /* eslint-disable  func-names */
 /* eslint-disable  no-console */
 /* eslint-disable  no-restricted-syntax */
-const Alexa = require('ask-sdk-core');
+const Alexa = require('ask-sdk');
 const zipcodes = require('zipcodes');
 const get = require('lodash/get');
 const carApiSearch = require('./helper/carSearchApi');
@@ -52,12 +52,13 @@ const SearchCarsNowIntent = {
         const carDetails = preferenceEngine.findTopResult(results.listings, storedUserPreferences);
 
         const description = get(carDetails, 'heading', 'car');
-        const miles = get(carDetails, 'miles', 'miles unknown');
-        const price = get(carDetails, 'price', 'price unknown');
+        const miles = get(carDetails, 'miles', 'Miles unknown');
+        const price = get(carDetails, 'price', 'Price unknown');
         const images = get(carDetails, 'media.photo_links', [LOGO_URL]);
         const dealerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
         let dealerName = get(carDetails, 'dealer.name', 'Owner Unknown');
         dealerName = dealerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
+        const dealerWebsite = get(carDetails, 'dealer.website', 'Website Unknown');
 
         const speechText = `
             I found a ${description} with ${miles} miles for a sales price of $${price}.
@@ -65,22 +66,37 @@ const SearchCarsNowIntent = {
             Otherwise you can continue searching or exit the app.
         `;
 
-        const showText = `
-            ${description}
-
-            ${miles} miles | $${price}
-
-            Dealer: ${dealerName}
-
-            Phone: ${dealerPhone}
-        `;
+        const showStuff = [
+            description,
+            `${miles} miles`,
+            `Sales Price $${price}`,
+            `Dealer: ${dealerName}`,
+            `Phone: ${dealerPhone}`,
+            `Website ${dealerWebsite}`,
+        ];
 
         await dynamoDB.lastShownCar(handlerInput.requestEnvelope, carDetails);
 
-        return handlerInput.responseBuilder
-            .speak(speechText)
-            .withStandardCard(APP_NAME, showText, images[0], images[0])
-            .getResponse();
+        const response = handlerInput.responseBuilder;
+        response.speak(speechText);
+        response.addRenderTemplateDirective({
+            type: 'ListTemplate2',
+            token: 'string',
+            backButton: 'HIDDEN',
+            title: description,
+            listItems: images.map((image, index) => {
+                return {
+                    token: 'string',
+                    textContent: new Alexa.RichTextContentHelper()
+                        .withPrimaryText(get(showStuff, index, 'Car Photo'))
+                        .getTextContent(),
+                    image: new Alexa.ImageHelper()
+                    .addImageInstance(image)
+                    .getImage(),
+                };
+            }),
+        });
+        return response.getResponse();
     },
 };
 
