@@ -1,6 +1,7 @@
 /* eslint valid-jsdoc: 0 */
 /* eslint max-len: 0 */
 const includes = require('lodash/includes');
+const get = require('lodash/get');
 
 // 'Machine Learning'
 
@@ -20,13 +21,13 @@ const includes = require('lodash/includes');
 
 // test
 const computeScore = (objCarDetais) => {
-    if (objCarDetais.make.toLowerCase() === 'dodge') {
+    if (objCarDetais.build.make.toLowerCase() === 'dodge') {
         return 100;
-    } else if (objCarDetais.make.toLowerCase() === 'honda') {
+    } else if (objCarDetais.build.make.toLowerCase() === 'honda') {
         return 90;
-    } else if (objCarDetais.make.toLowerCase() === 'ford') {
+    } else if (objCarDetais.build.make.toLowerCase() === 'ford') {
         return 80;
-    } else if (objCarDetais.make.toLowerCase() === 'chevrolet') {
+    } else if (objCarDetais.build.make.toLowerCase() === 'chevrolet') {
         return 70;
     }
     return 0;

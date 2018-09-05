@@ -479,8 +479,6 @@ const HelpIntentHandler = {
     },
     handle(handlerInput) {
       const speechText = `
-        Example phrases:
-        
         At any time, to start the app, say 'Alexa, Start Car Shopper.'
 
         To perform a car search, say 'Alexa, search now.'

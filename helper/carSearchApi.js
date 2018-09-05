@@ -58,7 +58,9 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
 
     // Join makes to make a string (no pun intended)
     const makes = get(basePreferences, 'make', []);
-    baseUrl += `&make=${makes.map((item) => item.toLowerCase()).join(',')}`;
+    if (makes.length !== 0) {
+        baseUrl += `&make=${makes.map((item) => item.toLowerCase()).join(',')}`;
+    }
 
     const bodyStyles = get(basePreferences, 'bodyStyles', []);
     if (bodyStyles.length !== 0) {
