@@ -54,9 +54,9 @@ const SearchCarsNowIntent = {
         const miles = get(carDetails, 'miles', 'miles unknown');
         const price = get(carDetails, 'price', 'price unknown');
         const images = get(carDetails, 'media.photo_links', [LOGO_URL]);
-        const ownerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
-        let ownerText = get(carDetails, 'dealer.name', 'Owner Unknown');
-        ownerText = ownerText.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
+        const dealerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
+        let dealerName = get(carDetails, 'dealer.name', 'Owner Unknown');
+        dealerName = dealerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
 
         const speechText = `
             I found a ${description} with ${miles} miles for a sales price of $${price}.
@@ -69,9 +69,9 @@ const SearchCarsNowIntent = {
 
             ${miles} miles | $${price}
 
-            Dealer: ${ownerText}
+            Dealer: ${dealerName}
 
-            Phone: ${ownerPhone}
+            Phone: ${dealerPhone}
         `;
 
         await dynamoDB.lastShownCar(handlerInput.requestEnvelope, carDetails);
@@ -96,18 +96,18 @@ const SaveResponseIntent = {
         const miles = get(carDetails, 'miles', 'miles unknown');
         const price = get(carDetails, 'price', 'price unknown');
         const images = get(carDetails, 'media.photo_links', [LOGO_URL, LOGO_URL]);
-        const ownerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
-        let ownerText = get(carDetails, 'dealer.name', 'Owner Unknown');
-        ownerText = ownerText.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
+        const dealerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
+        let dealerName = get(carDetails, 'dealer.name', 'Owner Unknown');
+        dealerName = dealerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
 
         const showText = `
             ${description}
 
             ${miles} miles | $${price}
 
-            Dealer: ${ownerText}
+            Dealer: ${dealerName}
 
-            Phone: ${ownerPhone}
+            Phone: ${dealerPhone}
         `;
 
         return handlerInput.responseBuilder
@@ -139,18 +139,18 @@ const CompleteSaveResponseIntent = {
             const miles = get(carDetails, 'miles', 'miles unknown');
             const price = get(carDetails, 'price', 'price unknown');
             images = get(carDetails, 'media.photo_links', []);
-            const ownerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
-            let ownerText = get(carDetails, 'dealer.name', 'Owner Unknown');
-            ownerText = ownerText.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
+            const dealerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
+            let dealerName = get(carDetails, 'dealer.name', 'Owner Unknown');
+            dealerName = dealerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
 
             showText = `
                 ${description}
     
                 ${miles} miles | $${price}
     
-                Dealer: ${ownerText}
+                Dealer: ${dealerName}
     
-                Phone: ${ownerPhone}
+                Phone: ${dealerPhone}
             `;
 
             if (saveResponse === 'yes') {

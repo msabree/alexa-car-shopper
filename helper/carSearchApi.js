@@ -34,11 +34,7 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
     const sortBy = sortByOptions[Math.floor(Math.random() * sortByOptions.length)];
     const sortOrder = sortOrderOptions[Math.floor(Math.random() * sortOrderOptions.length)];
 
-    // Base url w/ zip (zip is pretty much required)
-    // End at 2019, rememeber to update next year :)
-    // Search 50 miles since that is about how far i think people will want to drive.
-    // If we don't match anything on the first search we can pass in startIndex + 1
-    let baseUrl = `http://api.marketcheck.com/v1/search?api_key=${process.env.API_KEY}&start=${startIndex}&seller_type=dealer&radius=50&zip=${zip}&rows=${maxRowsPerRequest}&sort_by=${sortBy}&sort_order=${sortOrder}`;
+    let baseUrl = `http://api.marketcheck.com/v1/search?api_key=${process.env.API_KEY}&start=${startIndex}&seller_type=dealer&radius=50&zip=${zip}&rows=${maxRowsPerRequest}&sort_by=${sortBy}&sort_order=${sortOrder}&carfax_clean_title=true&seller_type=dealer`;
 
     baseUrl += `&miles_range=0-${get(basePreferences, 'maxMileage', 400000)}`;
 
@@ -58,6 +54,11 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
     }
 
     baseUrl += `&car_type=${get(basePreferences, 'condition', 'used')}`;
+
+
+    // Join makes to make a string (no pun intended)
+    const makes = get(basePreferences, 'make', []);
+    baseUrl += `&make=${makes.map((item) => item.toLowerCase()).join(',')}`;
 
     const bodyStyles = get(basePreferences, 'bodyStyles', []);
     if (bodyStyles.length !== 0) {

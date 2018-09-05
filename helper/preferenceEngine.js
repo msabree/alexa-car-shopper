@@ -1,83 +1,74 @@
 /* eslint valid-jsdoc: 0 */
 /* eslint max-len: 0 */
-const get = require('lodash/get');
 const includes = require('lodash/includes');
-const baseBodyStyles = require('../data/bodyStyles');
 
-/**
- * Returns the max price to show.
- * We only report wehn price is too high.
- * Price too low should never hold any weight, the other car factors matter
- * more in that case (year/mileage/condition).
- */
-const determineMaxPrice = (prefProf) => {
-    const DIFF_PERCENT = .1;
-    let maxPrice;
-    for (let i = 0; i < prefProf.dislikes.length; i++) {
-        let objDislikeReason = prefProf.dislikes[i].reasons;
-        const dislikePrice = get(objDislikeReason, 'price');
-        if (dislikePrice && (maxPrice === undefined || dislikePrice < maxPrice)) {
-            maxPrice = dislikePrice;
-        }
+// 'Machine Learning'
+
+// Set default weights for all preferences that
+// we will analyze
+// Weights are between 1 - 5 in relation to importance
+// In the future we may let user configure these.
+// const objWeights = {
+//     mileage: 3,
+//     year: 3,
+//     makeAndModel: 3, // i think it makes sense to look at these together
+//     bodyStyle: 4,
+//     price: 5,
+//     color: 2,
+//     transmission: 5,
+// };
+
+const computeScore = (objCarDetais) => {
+    if (objCarDetais.make.toLowerCase() === 'dodge') {
+        return 100;
     }
-
-    return (maxPrice === undefined) ? 0 : maxPrice - (maxPrice * DIFF_PERCENT);
+    return 0;
 };
 
 /**
- * Returns the minimum year that a user is interested in searching for.
+ * Examines all of the returned cars and
+ * uses the users likes and dislikes to suggest the
+ * best one.
+ * arrResults is what we get back from the initial search
+ * objStoredUserData contains car ids we already showed to a user
  */
-const determineMinYear = (prefProf) => {
-    let minYear = 1929;
-    for (let i = 0; i < prefProf.dislikes.length; i++) {
-        let objDislikeReason = prefProf.dislikes[i].reasons;
-        const dislikeYear = get(objDislikeReason, 'year', 0);
-        if (dislikeYear > minYear) {
-            minYear = dislikeYear;
+const findTopResult = (arrResults, objStoredUserData) => {
+    // Which car ids have we already shown to the user
+    const alreadyShownIds = [];
+    const likedCars = get(objStoredUserData, 'likes', []);
+    const dislikedCars = get(objStoredUserData, 'dislikes', []);
+
+    for (let i = 0; i < likedCars.length; i++) {
+        alreadyShownIds.push(likedCars[i].id);
+    }
+
+    for (let i = 0; i < dislikedCars.length; i++) {
+        alreadyShownIds.push(dislikedCars[i].id);
+    }
+
+    let maxScoreIndex = -1;
+    let maxScore = 0;
+
+    for (let i = 0; i < arrResults.length; i++) {
+        // Dont show again
+        if (!includes(alreadyShownIds, arrResults[i].id)) {
+            let currScore = computeScore(arrResults[i]);
+            if (currScore > maxScore) {
+                maxScoreIndex = i;
+                maxScore = currScore;
+            }
         }
     }
 
-    const years = [];
-    for (let i = minYear; i < 2020; i++) {
-        years.push(i);
+    // if we end with -1, then we technically need to go to the next set of results and try agan?
+    // but for now we set to the first item since we are short on time
+    if (maxScoreIndex === -1) {
+        console.log('TO DO: We need to page through results until we find one to return to the user.');
+        console.log('Defaulting to car at index 0.');
     }
-    return years;
-};
-
-/**
- * Returns the max amount of miles to return. Will return undefined if
- * no preference for mileage recorded.
- * Return DIFF_PERCENT < than lowest recorded max mileage
- */
-const determineMaxMiles = (prefProf) => {
-    const DIFF_PERCENT = .15; // ---> if i dislike a car @ 90,000 miles dont return 88,000
-    let maxMiles;
-        for (let i = 0; i < prefProf.dislikes.length; i++) {
-        let objDislikeReason = prefProf.dislikes[i].reasons;
-        const dislikeMiles = get(objDislikeReason, 'miles');
-        if (dislikeMiles !== undefined && (maxMiles === undefined || dislikeMiles < maxMiles)) {
-            maxMiles = dislikeMiles;
-        }
-    }
-    return Math.round(maxMiles - (maxMiles * DIFF_PERCENT));
-};
-
-const determineBodyStyles = (prefProf) => {
-    const dislikedBodyStyles = [];
-    for (let i = 0; i < prefProf.dislikes.length; i++) {
-        let objDislikeReason = prefProf.dislikes[i].reasons;
-        const dislikeBodyStyle = get(objDislikeReason, 'bodyStyle');
-        if (dislikeBodyStyle) {
-            dislikedBodyStyles.push(dislikeBodyStyle);
-        }
-    }
-
-    return baseBodyStyles.filter((style) => !includes(dislikedBodyStyles, style));
+    return (maxScoreIndex === -1) ? arrResults[0] : arrResults[maxScoreIndex];
 };
 
 module.exports = {
-    determineMaxPrice,
-    determineMinYear,
-    determineMaxMiles,
-    determineBodyStyles,
+    findTopResult,
 };
