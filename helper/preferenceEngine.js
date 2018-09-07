@@ -31,7 +31,7 @@ const learn = (arrViewedCars, type) => {
 
         let price = get(arrViewedCars[i], 'price');
         if (price !== undefined) {
-            objDeviations[type].mileage.push(mileage);
+            objDeviations[type].price.push(price);
         }
 
         let year = get(arrViewedCars[i], 'build.year');
