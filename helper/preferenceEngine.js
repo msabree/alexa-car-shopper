@@ -77,12 +77,10 @@ const learn = (arrViewedCars, type) => {
 // Compute score for number values
 const computeNumberScore = (car, carPathSelector, objDeviationKey) => {
     const currentValue = get(car, carPathSelector);
-    console.log(`${carPathSelector} ${objDeviationKey} ${currentValue}`);
     if (currentValue === undefined) {
         return 5;
     }
 
-    // get like/dislike averages
     const likedAverage = meanBy(objDeviations.likes[objDeviationKey], (intValue) => {
         return intValue;
     });
@@ -92,7 +90,6 @@ const computeNumberScore = (car, carPathSelector, objDeviationKey) => {
     });
 
     if (dislikedAverage > likedAverage) {
-        // user wants a new car
         if (currentValue < dislikedAverage && currentValue < likedAverage) {
             return 10;
         } else if (Math.abs(currentValue - dislikedAverage) > Math.abs(currentValue - likedAverage)) {
@@ -103,7 +100,6 @@ const computeNumberScore = (car, carPathSelector, objDeviationKey) => {
             return 5;
         }
     } else if (dislikedAverage < likedAverage) {
-        // user wants an older car
         if (currentValue > dislikedAverage && currentValue > likedAverage) {
             return 10;
         } else if (Math.abs(currentValue - dislikedAverage) < Math.abs(currentValue - likedAverage)) {
@@ -121,12 +117,10 @@ const computeNumberScore = (car, carPathSelector, objDeviationKey) => {
 // Compute score for string values
 const computeStringScore = (car, carPathSelector, objDeviationKey) => {
     const currentValue = get(car, carPathSelector);
-    console.log(`${carPathSelector} ${objDeviationKey} ${currentValue}`);
     if (currentValue === undefined) {
         return 5;
     }
 
-    // Check the frequency that the string occurs in the deviations object
     const likedCount = get(objDeviations, ['dislikes', objDeviationKey, currentValue], 0);
     const dislikedCount = get(objDeviations, ['dislikes', objDeviationKey, currentValue], 0);
 
@@ -154,15 +148,12 @@ const computeStringScore = (car, carPathSelector, objDeviationKey) => {
  * objStoredUserData contains car ids we already showed to a user
  */
 const findTopResult = (arrResults, objStoredUserData) => {
-    // Which car ids have we already shown to the user
     const alreadyShownIds = [];
     const likedCars = get(objStoredUserData, 'likes', []);
     const dislikedCars = get(objStoredUserData, 'dislikes', []);
 
     learn(likedCars, 'likes');
     learn(dislikedCars, 'dislikes');
-
-    console.log('deviations', objDeviations);
 
     for (let i = 0; i < likedCars.length; i++) {
         alreadyShownIds.push(likedCars[i].id);
@@ -172,13 +163,10 @@ const findTopResult = (arrResults, objStoredUserData) => {
         alreadyShownIds.push(dislikedCars[i].id);
     }
 
-    console.log('Already shown --->', alreadyShownIds);
-
     let maxScoreIndex = -1;
     let maxScore = 0;
 
     for (let i = 0; i < arrResults.length; i++) {
-        // Dont show again
         if (!includes(alreadyShownIds, arrResults[i].id)) {
             let mileageScore = computeNumberScore(arrResults[i], 'miles', 'miles');
             let priceScore = computeNumberScore(arrResults[i], 'price', 'price');
@@ -187,10 +175,7 @@ const findTopResult = (arrResults, objStoredUserData) => {
             let modelScore = computeStringScore(arrResults[i], 'build.model', 'model');
             let bodyTypeScore = computeStringScore(arrResults[i], 'build.body_type', 'body_type');
 
-            // Sum all scores, the greatest is the best match out of the available results
             let currScore = mileageScore + priceScore + yearScore + makeScore + modelScore + bodyTypeScore;
-            console.log(JSON.stringify(arrResults[i]));
-            console.log(`Curr Score ${currScore}`);
 
             if (currScore > maxScore) {
                 maxScoreIndex = i;
@@ -199,12 +184,6 @@ const findTopResult = (arrResults, objStoredUserData) => {
         }
     }
 
-    // if we end with -1, then we technically need to go to the next set of results and try agan?
-    // but for now we set to the first item since we are short on time
-    if (maxScoreIndex === -1) {
-        console.log('TO DO: We need to page through results until we find one to return to the user.');
-        console.log('Defaulting to car at index 0.');
-    }
     return (maxScoreIndex === -1) ? arrResults[0] : arrResults[maxScoreIndex];
 };
 

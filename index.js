@@ -19,9 +19,9 @@ const LaunchRequestHandler = {
     },
     handle(handlerInput) {
         const welcomeOptions = [
-            'Hey, my name is Alexa and I will help you find the perfect car.',
-            `Hey, there are lots of great cars for sale, let's find you one.`,
-            `Ready to buy a car? I can help you with that!`,
+            `Hey, let's find you a car to buy! You can start searching when ready.`,
+            `Weclome. My job is to help you find a car to buy. I'm ready when you are.`,
+            `Hello and welcome to Alexa Car Shopper. The quick and easy way to browse cars for sale.`,
             `Welcome to Alexa Car Shopper. Let's get started on your car search!`,
         ];
         const speechText = welcomeOptions[Math.floor(Math.random() * welcomeOptions.length)];
