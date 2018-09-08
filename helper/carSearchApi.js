@@ -34,7 +34,7 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
     const sortBy = sortByOptions[Math.floor(Math.random() * sortByOptions.length)];
     const sortOrder = sortOrderOptions[Math.floor(Math.random() * sortOrderOptions.length)];
 
-    let baseUrl = `http://api.marketcheck.com/v1/search?api_key=${process.env.API_KEY}&start=${startIndex}&seller_type=dealer&radius=50&zip=${zip}&rows=${maxRowsPerRequest}&sort_by=${sortBy}&sort_order=${sortOrder}&carfax_clean_title=true&seller_type=dealer`;
+    let baseUrl = `http://api.marketcheck.com/v1/search?api_key=${process.env.API_KEY}&start=${startIndex}&seller_type=dealer&radius=50&zip=${zip}&rows=${maxRowsPerRequest}&sort_by=${sortBy}&sort_order=${sortOrder}&carfax_clean_title=true`;
 
     baseUrl += `&miles_range=0-${get(basePreferences, 'maxMileage', 400000)}`;
 
