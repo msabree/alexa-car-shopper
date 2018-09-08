@@ -1,5 +1,6 @@
 /* eslint valid-jsdoc: 0 */
 /* eslint max-len: 0 */
+/* eslint camelcase: 0 */
 const includes = require('lodash/includes');
 const get = require('lodash/get');
 const meanBy = require('lodash/meanBy');
@@ -9,15 +10,17 @@ const objDeviations = {
     likes: {
         miles: [],
         year: [],
-        makeAndModel: {},
-        bodyStyle: {},
+        make: {},
+        model: {},
+        body_type: {},
         price: [],
     },
     dislikes: {
         miles: [],
         year: [],
-        makeAndModel: {},
-        bodyStyle: {},
+        make: {},
+        model: {},
+        body_type: {},
         price: [],
     },
 };
@@ -39,64 +42,73 @@ const learn = (arrViewedCars, type) => {
             objDeviations[type].year.push(year);
         }
 
-        let bodyStyle = get(arrViewedCars[i], 'body_type');
-        if (bodyStyle !== undefined) {
-            let currentCount = objDeviations[type].bodyStyle[body_type];
+        let body_type = get(arrViewedCars[i], 'body_type');
+        if (body_type !== undefined) {
+            let currentCount = objDeviations[type].body_type[body_type];
             if (currentCount === undefined) {
-                objDeviations[type].bodyStyle[body_type] = 0;
+                objDeviations[type].body_type[body_type] = 0;
             } else {
-                objDeviations[type].bodyStyle[body_type] += 1;
+                objDeviations[type].body_type[body_type] += 1;
             }
         }
 
-        let make = get(arrViewedCars[i], 'make');
-        let model = get(arrViewedCars[i], 'model');
-        if (make !== undefined && model != undefined) {
-            let currentCount = objDeviations[type].makeAndModel[`${make}|${model}`];
+        let make = get(arrViewedCars[i], 'build.make');
+        if (make !== undefined) {
+            let currentCount = objDeviations[type].make[make];
             if (currentCount === undefined) {
-                objDeviations[type].makeAndModel[`${make}|${model}`] = 0;
+                objDeviations[type].make[make] = 0;
             } else {
-                objDeviations[type].makeAndModel[`${make}|${model}`] += 1;
+                objDeviations[type].make[make] += 1;
+            }
+        }
+
+        let model = get(arrViewedCars[i], 'build.model');
+        if (model != undefined) {
+            let currentCount = objDeviations[type].model[model];
+            if (currentCount === undefined) {
+                objDeviations[type].model[model] = 0;
+            } else {
+                objDeviations[type].model[model] += 1;
             }
         }
     }
 };
 
-// Compute mileage score
-const computeMileageScore = (car) => {
-    const currentCarMileage = get(car, 'miles');
-    console.log(`currentCarMileage ${currentCarMileage}`);
-    if (currentCarMileage === undefined) {
+// Compute score for number values
+const computeNumberScore = (car, carPathSelector, objDeviationKey) => {
+    const currentValue = get(car, carPathSelector);
+    console.log(`${carPathSelector} ${objDeviationKey} ${currentValue}`);
+    if (currentValue === undefined) {
         return 5;
     }
 
     // get like/dislike averages
-    const likeMilesAverage = meanBy(objDeviations.likes.miles, (intMiles) => {
-        return intMiles;
+    const likedAverage = meanBy(objDeviations.likes[objDeviationKey], (intValue) => {
+        return intValue;
     });
 
-    const dislikedMilesAverage = meanBy(objDeviations.dislikes.miles, (intMiles) => {
-        return intMiles;
+    const dislikedAverage = meanBy(objDeviations.dislikes[objDeviationKey], (intValue) => {
+        return intValue;
     });
 
-    if (dislikedMilesAverage > likeMilesAverage) {
+    if (dislikedAverage > likedAverage) {
         // user wants a new car
-        if (currentCarMileage < dislikedMilesAverage && currentCarMileage < likeMilesAverage) {
+        if (currentValue < dislikedAverage && currentValue < likedAverage) {
             return 10;
-        } else if (Math.abs(currentCarMileage - dislikedMilesAverage) > Math.abs(currentCarMileage - likeMilesAverage)) {
+        } else if (Math.abs(currentValue - dislikedAverage) > Math.abs(currentValue - likedAverage)) {
             return 3;
-        } else if (Math.abs(currentCarMileage - dislikedMilesAverage) < Math.abs(currentCarMileage - likeMilesAverage)) {
+        } else if (Math.abs(currentValue - dislikedAverage) < Math.abs(currentValue - likedAverage)) {
             return 7;
         } else {
             return 5;
         }
-    } else if (dislikedMilesAverage < likeMilesAverage) {
+    } else if (dislikedAverage < likedAverage) {
         // user wants an older car
-        if (currentCarMileage > dislikedMilesAverage && currentCarMileage > likeMilesAverage) {
+        if (currentValue > dislikedAverage && currentValue > likedAverage) {
             return 10;
-        } else if (Math.abs(currentCarMileage - dislikedMilesAverage) < Math.abs(currentCarMileage - likeMilesAverage)) {
+        } else if (Math.abs(currentValue - dislikedAverage) < Math.abs(currentValue - likedAverage)) {
             return 3;
-        } else if (Math.abs(currentCarMileage - dislikedMilesAverage) > Math.abs(currentCarMileage - likeMilesAverage)) {
+        } else if (Math.abs(currentValue - dislikedAverage) > Math.abs(currentValue - likedAverage)) {
             return 7;
         } else {
             return 5;
@@ -105,6 +117,34 @@ const computeMileageScore = (car) => {
         return 5;
     }
 };
+
+// Compute score for string values
+const computeStringScore = (car, carPathSelector, objDeviationKey) => {
+    const currentValue = get(car, carPathSelector);
+    console.log(`${carPathSelector} ${objDeviationKey} ${currentValue}`);
+    if (currentValue === undefined) {
+        return 5;
+    }
+
+    // Check the frequency that the string occurs in the deviations object
+    const likedCount = get(objDeviations, ['dislikes', objDeviationKey, currentValue], 0);
+    const dislikedCount = get(objDeviations, ['dislikes', objDeviationKey, currentValue], 0);
+
+    const diff = likedCount - dislikedCount;
+
+    if (diff >= -2 && diff <= 5) {
+        return 5;
+    } else if (diff > 5 && diff < 10) {
+        return 8;
+    } else if (diff > 10) {
+        return 10;
+    } else if (diff < -2) {
+        return 2;
+    } else {
+        return 0;
+    }
+};
+
 
 /**
  * Examines all of the returned cars and
@@ -122,7 +162,7 @@ const findTopResult = (arrResults, objStoredUserData) => {
     learn(likedCars, 'likes');
     learn(dislikedCars, 'dislikes');
 
-    console.log(objDeviations);
+    console.log('deviations', objDeviations);
 
     for (let i = 0; i < likedCars.length; i++) {
         alreadyShownIds.push(likedCars[i].id);
@@ -140,8 +180,18 @@ const findTopResult = (arrResults, objStoredUserData) => {
     for (let i = 0; i < arrResults.length; i++) {
         // Dont show again
         if (!includes(alreadyShownIds, arrResults[i].id)) {
-            let currScore = computeMileageScore(arrResults[i]);
-            console.log(`Curr Score (miles only) ${currScore}`);
+            let mileageScore = computeNumberScore(arrResults[i], 'miles', 'miles');
+            let priceScore = computeNumberScore(arrResults[i], 'price', 'price');
+            let yearScore = computeNumberScore(arrResults[i], 'build.year', 'year');
+            let makeScore = computeStringScore(arrResults[i], 'build.make', 'make');
+            let modelScore = computeStringScore(arrResults[i], 'build.model', 'model');
+            let bodyTypeScore = computeStringScore(arrResults[i], 'build.body_type', 'body_type');
+
+            // Sum all scores, the greatest is the best match out of the available results
+            let currScore = mileageScore + priceScore + yearScore + makeScore + modelScore + bodyTypeScore;
+            console.log(JSON.stringify(arrResults[i]));
+            console.log(`Curr Score ${currScore}`);
+
             if (currScore > maxScore) {
                 maxScoreIndex = i;
                 maxScore = currScore;
