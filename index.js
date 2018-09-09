@@ -9,6 +9,7 @@ const carApiSearch = require('./helper/carSearchApi');
 const getSlotValues = require('./helper/getSlotValues');
 const dynamoDB = require('./helper/dynamoDB');
 const preferenceEngine = require('./helper/preferenceEngine');
+const supportsDisplay = require('./helper/supportsDisplay');
 
 const APP_NAME = 'Alexa - Car Shopper';
 const LOGO_URL = 'https://s3.amazonaws.com/alexa-car-shopper/logo.png';
@@ -49,57 +50,64 @@ const SearchCarsNowIntent = {
         // returns static data for testing
         const results = await carApiSearch(storedUserPreferences, startIndex);
 
-        const carDetails = preferenceEngine.findTopResult(results.listings, storedUserPreferences);
+        if (results.error !== undefined) {
+            const response = handlerInput.responseBuilder;
+            response.speak('An error occurred while tryng to fetch cars. Please try again later.');
+            return response.getResponse();
+        } else {
+            const carDetails = preferenceEngine.findTopResult(results.listings, storedUserPreferences);
+            const description = get(carDetails, 'heading', 'car');
+            const miles = get(carDetails, 'miles', 'Miles unknown');
+            const price = get(carDetails, 'price', 'Price unknown');
+            const images = get(carDetails, 'media.photo_links', [LOGO_URL]);
+            const dealerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
+            let dealerName = get(carDetails, 'dealer.name', 'Owner Unknown');
+            dealerName = dealerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
+            const dealerWebsite = get(carDetails, 'dealer.website', 'Website Unknown');
+            const dealerCity = get(carDetails, 'dealer.city', 'City Unknown');
+            const dealerState = get(carDetails, 'dealer.state', 'State Unknown');
 
-        const description = get(carDetails, 'heading', 'car');
-        const miles = get(carDetails, 'miles', 'Miles unknown');
-        const price = get(carDetails, 'price', 'Price unknown');
-        const images = get(carDetails, 'media.photo_links', [LOGO_URL]);
-        const dealerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
-        let dealerName = get(carDetails, 'dealer.name', 'Owner Unknown');
-        dealerName = dealerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
-        const dealerWebsite = get(carDetails, 'dealer.website', 'Website Unknown');
-        const dealerCity = get(carDetails, 'dealer.city', 'City Unknown');
-        const dealerState = get(carDetails, 'dealer.state', 'State Unknown');
+            const speechText = `
+                I found a ${description} with ${miles} miles for a sales price of $${price}.
+                To add this car to your like or dislike history you can say 'save response'.
+                Otherwise you can continue searching or exit the app.
+            `;
 
-        const speechText = `
-            I found a ${description} with ${miles} miles for a sales price of $${price}.
-            To add this car to your like or dislike history you can say 'save response'.
-            Otherwise you can continue searching or exit the app.
-        `;
+            const showStuff = [
+                description,
+                `${miles} miles`,
+                `Sales Price $${price}`,
+                `Dealer: ${dealerName}`,
+                `Phone: ${dealerPhone}`,
+                `Website: ${dealerWebsite}`,
+                `Location: ${dealerCity} ${dealerState}`,
+            ];
 
-        const showStuff = [
-            description,
-            `${miles} miles`,
-            `Sales Price $${price}`,
-            `Dealer: ${dealerName}`,
-            `Phone: ${dealerPhone}`,
-            `Website: ${dealerWebsite}`,
-            `Location: ${dealerCity} ${dealerState}`,
-        ];
+            await dynamoDB.lastShownCar(handlerInput.requestEnvelope, carDetails);
 
-        await dynamoDB.lastShownCar(handlerInput.requestEnvelope, carDetails);
-
-        const response = handlerInput.responseBuilder;
-        response.speak(speechText);
-        response.addRenderTemplateDirective({
-            type: 'ListTemplate2',
-            token: 'string',
-            backButton: 'HIDDEN',
-            title: description,
-            listItems: images.map((image, index) => {
-                return {
+            const response = handlerInput.responseBuilder;
+            response.speak(speechText);
+            if (supportsDisplay(handlerInput)) {
+                response.addRenderTemplateDirective({
+                    type: 'ListTemplate2',
                     token: 'string',
-                    textContent: new Alexa.RichTextContentHelper()
-                        .withPrimaryText(get(showStuff, index, 'Car Photo'))
-                        .getTextContent(),
-                    image: new Alexa.ImageHelper()
-                    .addImageInstance(image)
-                    .getImage(),
-                };
-            }),
-        });
-        return response.getResponse();
+                    backButton: 'HIDDEN',
+                    title: description,
+                    listItems: images.map((image, index) => {
+                        return {
+                            token: 'string',
+                            textContent: new Alexa.RichTextContentHelper()
+                                .withPrimaryText(get(showStuff, index, 'Car Photo'))
+                                .getTextContent(),
+                            image: new Alexa.ImageHelper()
+                            .addImageInstance(image)
+                            .getImage(),
+                        };
+                    }),
+                });
+            }
+            return response.getResponse();
+        }
     },
 };
 
@@ -491,23 +499,25 @@ const ShowAllLikedCarsIntent = {
             return response.getResponse();
           } else {
             response.speak(speechText);
-            response.addRenderTemplateDirective({
-                type: 'ListTemplate2',
-                token: 'string',
-                backButton: 'HIDDEN',
-                title: 'Car Like History',
-                listItems: likedCars.map((car) => {
-                    return {
-                        token: 'string',
-                        textContent: new Alexa.RichTextContentHelper()
-                            .withPrimaryText(`${get(car, 'heading', '')} | ${get(car, 'dealer.website')}`)
-                            .getTextContent(),
-                        image: new Alexa.ImageHelper()
-                        .addImageInstance(get(car, 'media.photo_links[0]', ''))
-                        .getImage(),
-                    };
-                }),
-            });
+            if (supportsDisplay(handlerInput)) {
+                response.addRenderTemplateDirective({
+                    type: 'ListTemplate2',
+                    token: 'string',
+                    backButton: 'HIDDEN',
+                    title: 'Car Like History',
+                    listItems: likedCars.map((car) => {
+                        return {
+                            token: 'string',
+                            textContent: new Alexa.RichTextContentHelper()
+                                .withPrimaryText(`${get(car, 'heading', '')} | ${get(car, 'dealer.website')}`)
+                                .getTextContent(),
+                            image: new Alexa.ImageHelper()
+                            .addImageInstance(get(car, 'media.photo_links[0]', ''))
+                            .getImage(),
+                        };
+                    }),
+                });
+            }
             return response.getResponse();
           }
       },

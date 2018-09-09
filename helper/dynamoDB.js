@@ -1,4 +1,3 @@
-/* eslint max-len: 0 */
 const get = require('lodash/get');
 const set = require('lodash/set');
 const cloneDeep = require('lodash/cloneDeep');

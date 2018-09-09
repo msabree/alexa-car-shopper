@@ -8,7 +8,7 @@ const axios = require('axios');
  * based on constructed query params.
  */
 module.exports = (storedUserPreferences, startIndex = 0) => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         // basePreferences, dislikes, saved cars
         const basePreferences = storedUserPreferences.basePreferences;
 
@@ -105,11 +105,11 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
         .then(function(response) {
             console.log(baseUrl);
             console.log(response);
-            resolve(response);
+            resolve(response.data);
         })
         .catch(function(error) {
             console.log(error);
-            reject(error);
+            resolve({error: error.message});
         });
     });
 };

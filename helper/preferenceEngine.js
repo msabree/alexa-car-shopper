@@ -1,5 +1,4 @@
 /* eslint valid-jsdoc: 0 */
-/* eslint max-len: 0 */
 /* eslint camelcase: 0 */
 const includes = require('lodash/includes');
 const get = require('lodash/get');

@@ -1,4 +1,3 @@
-/* eslint max-len: 0 */
 module.exports = (filledSlots) => {
     const slotValues = {};
 
