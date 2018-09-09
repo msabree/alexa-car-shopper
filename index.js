@@ -20,7 +20,7 @@ const LaunchRequestHandler = {
     handle(handlerInput) {
         const welcomeOptions = [
             `Hey, let's find you a car to buy! You can start searching when ready.`,
-            `Weclome. My job is to help you find a car to buy. I'm ready when you are.`,
+            `Welcome. My job is to help you find a car to buy. I'm ready when you are.`,
             `Hello and welcome to Alexa Car Shopper. The quick and easy way to browse cars for sale.`,
             `Welcome to Alexa Car Shopper. Let's get started on your car search!`,
         ];
@@ -47,7 +47,7 @@ const SearchCarsNowIntent = {
 
         // Perform car search
         // returns static data for testing
-        const results = carApiSearch(storedUserPreferences, startIndex);
+        const results = await carApiSearch(storedUserPreferences, startIndex);
 
         const carDetails = preferenceEngine.findTopResult(results.listings, storedUserPreferences);
 
@@ -59,6 +59,8 @@ const SearchCarsNowIntent = {
         let dealerName = get(carDetails, 'dealer.name', 'Owner Unknown');
         dealerName = dealerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
         const dealerWebsite = get(carDetails, 'dealer.website', 'Website Unknown');
+        const dealerCity = get(carDetails, 'dealer.city', 'City Unknown');
+        const dealerState = get(carDetails, 'dealer.state', 'State Unknown');
 
         const speechText = `
             I found a ${description} with ${miles} miles for a sales price of $${price}.
@@ -72,7 +74,8 @@ const SearchCarsNowIntent = {
             `Sales Price $${price}`,
             `Dealer: ${dealerName}`,
             `Phone: ${dealerPhone}`,
-            `Website ${dealerWebsite}`,
+            `Website: ${dealerWebsite}`,
+            `Location: ${dealerCity} ${dealerState}`,
         ];
 
         await dynamoDB.lastShownCar(handlerInput.requestEnvelope, carDetails);
@@ -470,6 +473,46 @@ const CompleteUpdateMinYearIntent = {
     },
 };
 
+// Show the user all of the cars that they've liked
+const ShowAllLikedCarsIntent = {
+    canHandle(handlerInput) {
+        return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+          && handlerInput.requestEnvelope.request.intent.name === 'ShowAllLikedCarsIntent';
+      },
+      async handle(handlerInput) {
+          const storedUserPreferences = await dynamoDB.getStoredUserPreferences(handlerInput.requestEnvelope);
+          const speechText = 'Here are all the cars you have liked';
+          const likedCars = get(storedUserPreferences, 'likes', []);
+          console.log(likedCars);
+          const response = handlerInput.responseBuilder;
+
+          if (likedCars.length === 0) {
+            response.speak('No saved cars found.');
+            return response.getResponse();
+          } else {
+            response.speak(speechText);
+            response.addRenderTemplateDirective({
+                type: 'ListTemplate2',
+                token: 'string',
+                backButton: 'HIDDEN',
+                title: 'Car Like History',
+                listItems: likedCars.map((car) => {
+                    return {
+                        token: 'string',
+                        textContent: new Alexa.RichTextContentHelper()
+                            .withPrimaryText(`${get(car, 'heading', '')} | ${get(car, 'dealer.website')}`)
+                            .getTextContent(),
+                        image: new Alexa.ImageHelper()
+                        .addImageInstance(get(car, 'media.photo_links[0]', ''))
+                        .getImage(),
+                    };
+                }),
+            });
+            return response.getResponse();
+          }
+      },
+};
+
 // Danger zone. Reset app entirely. Require confirmation
 const ResetAppDataIntent = {
     canHandle(handlerInput) {
@@ -570,6 +613,7 @@ exports.handler = Alexa.SkillBuilders.custom()
         CompleteUpdateMaxPriceIntent,
         CompleteUpdateMinYearIntent,
         CompleteUpdateCityIntent,
+        ShowAllLikedCarsIntent,
         ResetAppDataIntent,
         HelpIntentHandler,
         CancelAndStopIntentHandler,

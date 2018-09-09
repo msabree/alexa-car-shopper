@@ -18,7 +18,7 @@ These are persisted. you can quit and come back at any time
    
   > Alexa, update min year
    
-  > Alexa, update conditions
+  > Alexa, update condition
    
   > Alexa, update max price
    
@@ -26,5 +26,8 @@ These are persisted. you can quit and come back at any time
  
   > Alexa, update make
 
+Review like history
+  > Alexa, show me my likes
+  
 Reset base preferences and clear like/dislike history
   > Alexa, reset app data

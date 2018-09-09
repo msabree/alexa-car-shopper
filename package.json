@@ -6,8 +6,8 @@
   "dependencies": {
     "ask-sdk": "^2.0.7",
     "ask-sdk-dynamodb-persistence-adapter": "^2.0.7",
+    "axios": "^0.18.0",
     "lodash": "^4.17.10",
-    "request": "^2.88.0",
     "zipcodes": "^6.1.0"
   },
   "devDependencies": {
