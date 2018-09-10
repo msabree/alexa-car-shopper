@@ -39,23 +39,26 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
 
         baseUrl += `&miles_range=0-${get(basePreferences, 'maxMileage', 400000)}`;
 
-        const minYear = get(basePreferences, 'minYear', 1981);
-        const years = [];
-
-        for (let i = minYear; i < maxYear; i++) {
-            years.push(i);
-        }
-
-        baseUrl += `&year=${years.join(',')}`;
-
         // Set max price only if specified
         const maxPrice = get(basePreferences, 'maxPrice');
         if (maxPrice !== undefined) {
             baseUrl += `&price_range=0-${maxPrice}`;
         }
 
-        baseUrl += `&car_type=${get(basePreferences, 'condition', 'used')}`;
+        const carType = get(basePreferences, 'condition', 'used');
+        baseUrl += `&car_type=${carType}`;
 
+        if (carType !== 'new') {
+            // new cars don't need a year range
+            const minYear = get(basePreferences, 'minYear', 1981);
+            const years = [];
+
+            for (let i = minYear; i < maxYear; i++) {
+                years.push(i);
+            }
+
+            baseUrl += `&year=${years.join(',')}`;
+        }
 
         // Join makes to make a string (no pun intended)
         const makes = get(basePreferences, 'make', []);
@@ -101,7 +104,11 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
             baseUrl += `&body_type=${bodyStylesQueryString}`;
         }
 
-        axios.get(baseUrl)
+        axios.get(baseUrl, {
+            headers: {
+                'Host': 'marketcheck-prod.apigee.net',
+            },
+        })
         .then(function(response) {
             console.log(baseUrl);
             console.log(response);

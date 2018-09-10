@@ -54,7 +54,12 @@ const SearchCarsNowIntent = {
             const response = handlerInput.responseBuilder;
             response.speak('An error occurred while tryng to fetch cars. Please try again later.');
             return response.getResponse();
-        } else {
+        } else if (results.listings.length === 0) {
+            const response = handlerInput.responseBuilder;
+            response.speak('No results found. Try updating your base preferences.');
+            return response.getResponse();
+        } 
+        else {
             const carDetails = preferenceEngine.findTopResult(results.listings, storedUserPreferences);
             const description = get(carDetails, 'heading', 'car');
             const miles = get(carDetails, 'miles', 'Miles unknown');
