@@ -58,8 +58,7 @@ const SearchCarsNowIntent = {
             const response = handlerInput.responseBuilder;
             response.speak('No results found. Try updating your base preferences.');
             return response.getResponse();
-        } 
-        else {
+        } else {
             const carDetails = preferenceEngine.findTopResult(results.listings, storedUserPreferences);
             const description = get(carDetails, 'heading', 'car');
             const miles = get(carDetails, 'miles', 'Miles unknown');
@@ -264,21 +263,37 @@ const CompleteUpdateCityIntent = {
     handle(handlerInput) {
         const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
         const slotValues = getSlotValues(filledSlots);
-        const city = get(slotValues, 'City.resolved');
+        const parsedCity = get(slotValues, 'City.resolved');
         let zip = 30318;
         let speechText;
-        if (city === undefined || city.split(' ').length !== 2) {
-            speechText = 'Unable to determine city, defaulting to Atlanta Georgia. To try again, say, Alexa update search city.';
+        console.log(parsedCity);
+        if (parsedCity === undefined || parsedCity.split(' ').length < 2) {
+            speechText = 'Unable to determine city, defaulting to Atlanta Georgia. To try again, say, Alexa update city.';
         } else {
-            const cityStateArray = city.split(' '); // city state
-            const location = zipcodes.lookupByName(cityStateArray[0], cityStateArray[1])[0];
-            zip = get(location, 'zip');
-
-            if (zip === undefined) {
-                zip = 30318;
-                speechText = 'Unable to determine city, setting to Atlanta Georgia. To try again, say, Alexa update search city.';
+            const states = ['Alabama', 'Alaska', 'American Samoa', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'District of Columbia', 'Federated States of Micronesia', 'Florida', 'Georgia', 'Guam', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Marshall Islands', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Northern Mariana Islands', 'Ohio', 'Oklahoma', 'Oregon', 'Palau', 'Pennsylvania', 'Puerto Rico', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virgin Island', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
+            let stateValue = '';
+            let cityValue = '';
+            for (let i = 0; i < states.length; i++) {
+                if (parsedCity.toLowerCase().includes(states[i].toLowerCase())) {
+                    stateValue = states[i];
+                    cityValue = parsedCity.toLowerCase().split(stateValue.toLowerCase())[0];
+                    break;
+                }
+            }
+            console.log(stateValue);
+            console.log('trimmed-->', cityValue.trim());
+            if (cityValue === '' || stateValue === '') {
+                speechText = 'Unable to determine city, defaulting to Atlanta Georgia. To try again, say, Alexa update city.';
             } else {
-                speechText = `You have requested ${city} which maps to zipcode ${zip}. Your preferences will be updated.`;
+                const location = zipcodes.lookupByName(cityValue.trim(), stateValue.trim())[0];
+                zip = get(location, 'zip');
+
+                if (zip === undefined) {
+                    zip = 30318;
+                    speechText = 'Unable to determine city, setting to Atlanta Georgia. To try again, say, Alexa update search city.';
+                } else {
+                    speechText = `You have requested ${parsedCity} which maps to zipcode ${zip}. Your preferences will be updated.`;
+                }
             }
         }
 
