@@ -39,6 +39,9 @@ To clear preferences (City cannot be cleared once set. It can be updated)
  
   > Alexa, clear makes  
 
+Show base preferences
+  > Alexa, show me my preferences
+
 Review like history
   > Alexa, show me my likes
   

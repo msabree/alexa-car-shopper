@@ -44,10 +44,10 @@ const saveUserBasePreferences = (requestEnvelope, action = 'add', attributeValue
             if (attributeValueType === 'array') {
                 set(clonedStoredUserPreferences, [basePreferencesPath, attributeKey], storedAttributeValue.filter((item) => item !== attributeValue));
             } else {
-                delete clonedStoredUserPreferences[basePreferences][attributeKey];
+                delete clonedStoredUserPreferences[basePreferencesPath][attributeKey];
             }
         } else if (action === 'clearAll') {
-            delete clonedStoredUserPreferences[basePreferences][attributeKey];
+            delete clonedStoredUserPreferences[basePreferencesPath][attributeKey];
         }
 
         return dynamoDbPersistenceAdapter.saveAttributes(requestEnvelope, clonedStoredUserPreferences);

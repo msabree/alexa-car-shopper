@@ -11,7 +11,7 @@ const dynamoDB = require('./helper/dynamoDB');
 const preferenceEngine = require('./helper/preferenceEngine');
 const supportsDisplay = require('./helper/supportsDisplay');
 
-const APP_NAME = 'Alexa - Car Shopper';
+const APP_NAME = 'Car Shopper';
 const LOGO_URL = 'https://s3.amazonaws.com/alexa-car-shopper/logo.png';
 
 const LaunchRequestHandler = {
@@ -22,8 +22,8 @@ const LaunchRequestHandler = {
         const welcomeOptions = [
             `Hey, let's find you a car to buy! You can start searching when ready.`,
             `Welcome. My job is to help you find a car to buy. I'm ready when you are.`,
-            `Hello and welcome to Alexa Car Shopper. The quick and easy way to browse cars for sale.`,
-            `Welcome to Alexa Car Shopper. Let's get started on your car search!`,
+            `Hello and welcome to Car Shopper. The quick and easy way to browse cars for sale.`,
+            `Welcome to Car Shopper. Let's get started on your car search!`,
         ];
         const speechText = welcomeOptions[Math.floor(Math.random() * welcomeOptions.length)];
 
@@ -272,6 +272,7 @@ const CompleteUpdateCityIntent = {
         let speechText;
         console.log(parsedCity);
         if (parsedCity === undefined || parsedCity.split(' ').length < 2) {
+            parsedCity = 'Atlanta Georgia';
             speechText = 'Unable to determine city, defaulting to Atlanta Georgia. To try again, say, Alexa update city.';
         } else {
             const states = ['Alabama', 'Alaska', 'American Samoa', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'District of Columbia', 'Federated States of Micronesia', 'Florida', 'Georgia', 'Guam', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Marshall Islands', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Northern Mariana Islands', 'Ohio', 'Oklahoma', 'Oregon', 'Palau', 'Pennsylvania', 'Puerto Rico', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virgin Island', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
@@ -287,6 +288,7 @@ const CompleteUpdateCityIntent = {
             console.log(stateValue);
             console.log('trimmed-->', cityValue.trim());
             if (cityValue === '' || stateValue === '') {
+                parsedCity = 'Atlanta Georgia';
                 speechText = 'Unable to determine city, defaulting to Atlanta Georgia. To try again, say, Alexa update city.';
             } else {
                 const location = zipcodes.lookupByName(cityValue.trim(), stateValue.trim())[0];
@@ -296,6 +298,7 @@ const CompleteUpdateCityIntent = {
                 if (latitude === undefined || longitude === undefined) {
                     latitude = '33.6488';
                     longitude = '-84.3915';
+                    parsedCity = 'Atlanta Georgia';
                     speechText = 'Unable to determine city, setting to Atlanta Georgia. To try again, say, Alexa update search city.';
                 } else {
                     speechText = `I will search for cars within a 50 mile radius of ${parsedCity}. Your preferences will be updated.`;
@@ -559,7 +562,7 @@ const ShowBasePreferencesIntent = {
           && handlerInput.requestEnvelope.request.intent.name === 'ShowBasePreferencesIntent';
       },
       async handle(handlerInput) {
-        const savedUserPreferences = await getStoredUserPreferences(handlerInput.requestEnvelope);
+        const savedUserPreferences = await dynamoDB.getStoredUserPreferences(handlerInput.requestEnvelope);
         const basePreferences = get(savedUserPreferences, 'basePreferences', {});
         const cityState = get(basePreferences, 'cityState');
         const bodyStyles = get(basePreferences, 'bodyStyles');
@@ -583,7 +586,7 @@ const ShowBasePreferencesIntent = {
             speechText += `You are searching for ${condition} cars. `;
         }
         if (maxPrice !== undefined) {
-            speechText += `You are searching for cars with a max price of $${cityState}. `;
+            speechText += `You are searching for cars with a max price of $${maxPrice}. `;
         }
         if (maxMileage !== undefined) {
             speechText += `You are searching with a max mileage of ${maxMileage}. `;
@@ -592,6 +595,9 @@ const ShowBasePreferencesIntent = {
             speechText += `You are searching for cars of types ${makes.join(', ')}. `;
         }
 
+        if(speechText === ''){
+            speechText = 'You do not have any stored preferences';
+        }        
 
         return handlerInput.responseBuilder
             .speak(speechText)
