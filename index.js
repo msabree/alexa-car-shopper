@@ -580,7 +580,7 @@ const ShowBasePreferencesIntent = {
             speechText += `You are searching for body styles of types ${bodyStyles.join(', ')}. `;
         }
         if (minYear !== undefined) {
-            speechText += `You are searching for with a min year of ${minYear}. `;
+            speechText += `You are searching for cars with a min year of ${minYear}. `;
         }
         if (condition !== undefined) {
             speechText += `You are searching for ${condition} cars. `;
@@ -589,7 +589,7 @@ const ShowBasePreferencesIntent = {
             speechText += `You are searching for cars with a max price of $${maxPrice}. `;
         }
         if (maxMileage !== undefined) {
-            speechText += `You are searching with a max mileage of ${maxMileage}. `;
+            speechText += `You are searching for cars with a max mileage of ${maxMileage}. `;
         }
         if (makes !== undefined) {
             speechText += `You are searching for cars of types ${makes.join(', ')}. `;
