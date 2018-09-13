@@ -307,6 +307,7 @@ const CompleteUpdateCityIntent = {
         console.log(latitude, longitude);
         await dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'latitude', latitude);
         await dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'longitude', longitude);
+        await dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'cityState', parsedCity);
 
         return handlerInput.responseBuilder
             .speak(speechText)
@@ -551,7 +552,156 @@ const ShowAllLikedCarsIntent = {
       },
 };
 
-// Danger zone. Reset app entirely. Require confirmation
+// Show preferences
+const ShowBasePreferencesIntent = {
+    canHandle(handlerInput) {
+        return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+          && handlerInput.requestEnvelope.request.intent.name === 'ShowBasePreferencesIntent';
+      },
+      async handle(handlerInput) {
+        const savedUserPreferences = await getStoredUserPreferences(handlerInput.requestEnvelope);
+        const basePreferences = get(savedUserPreferences, 'basePreferences', {});
+        const cityState = get(basePreferences, 'cityState');
+        const bodyStyles = get(basePreferences, 'bodyStyles');
+        const minYear = get(basePreferences, 'minYear');
+        const condition = get(basePreferences, 'condition');
+        const maxPrice = get(basePreferences, 'maxPrice');
+        const maxMileage = get(basePreferences, 'maxMileage');
+        const makes = get(basePreferences, 'make');
+
+        let speechText = '';
+        if (cityState !== undefined) {
+            speechText += `You are searching for cars in ${cityState}. `;
+        }
+        if (bodyStyles !== undefined) {
+            speechText += `You are searching for body styles of types ${bodyStyles.join(', ')}. `;
+        }
+        if (minYear !== undefined) {
+            speechText += `You are searching for with a min year of ${minYear}. `;
+        }
+        if (condition !== undefined) {
+            speechText += `You are searching for ${condition} cars. `;
+        }
+        if (maxPrice !== undefined) {
+            speechText += `You are searching for cars with a max price of $${cityState}. `;
+        }
+        if (maxMileage !== undefined) {
+            speechText += `You are searching with a max mileage of ${maxMileage}. `;
+        }
+        if (makes !== undefined) {
+            speechText += `You are searching for cars of types ${makes.join(', ')}. `;
+        }
+
+
+        return handlerInput.responseBuilder
+            .speak(speechText)
+            .withStandardCard(APP_NAME, speechText, LOGO_URL, LOGO_URL)
+            .getResponse();
+      },
+};
+
+// Clear preferences
+// ...
+
+
+const ClearBodyStylesIntent = {
+    canHandle(handlerInput) {
+        return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+          && handlerInput.requestEnvelope.request.intent.name === 'ClearBodyStylesIntent';
+      },
+      async handle(handlerInput) {
+          await dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'clearAll', 'string', 'bodyStyles');
+          const speechText = 'Body styles have been cleared. You can begin again when ready.';
+
+          return handlerInput.responseBuilder
+              .speak(speechText)
+              .withStandardCard(APP_NAME, speechText, LOGO_URL, LOGO_URL)
+              .getResponse();
+      },
+};
+
+const ClearMinYearIntent = {
+    canHandle(handlerInput) {
+        return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+          && handlerInput.requestEnvelope.request.intent.name === 'ClearMinYearIntent';
+      },
+      async handle(handlerInput) {
+          await dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'clearAll', 'string', 'minYear');
+          const speechText = 'Min year has been cleared. You can begin again when ready.';
+
+          return handlerInput.responseBuilder
+              .speak(speechText)
+              .withStandardCard(APP_NAME, speechText, LOGO_URL, LOGO_URL)
+              .getResponse();
+      },
+};
+
+const ClearConditionsIntent = {
+    canHandle(handlerInput) {
+        return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+          && handlerInput.requestEnvelope.request.intent.name === 'ClearConditionsIntent';
+      },
+      async handle(handlerInput) {
+          await dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'clearAll', 'string', 'condition');
+          const speechText = 'Car conditions have been cleared. You can begin again when ready.';
+
+          return handlerInput.responseBuilder
+              .speak(speechText)
+              .withStandardCard(APP_NAME, speechText, LOGO_URL, LOGO_URL)
+              .getResponse();
+      },
+};
+
+const ClearMaxPriceIntent = {
+    canHandle(handlerInput) {
+        return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+          && handlerInput.requestEnvelope.request.intent.name === 'ClearMaxPriceIntent';
+      },
+      async handle(handlerInput) {
+          await dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'clearAll', 'string', 'maxPrice');
+          const speechText = 'Max price has been cleared. You can begin again when ready.';
+
+          return handlerInput.responseBuilder
+              .speak(speechText)
+              .withStandardCard(APP_NAME, speechText, LOGO_URL, LOGO_URL)
+              .getResponse();
+      },
+};
+
+const ClearMaxMileageIntent = {
+    canHandle(handlerInput) {
+        return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+          && handlerInput.requestEnvelope.request.intent.name === 'ClearMaxMileageIntent';
+      },
+      async handle(handlerInput) {
+          await dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'clearAll', 'string', 'maxMileage');
+          const speechText = 'Max mileage has been cleared. You can begin again when ready.';
+
+          return handlerInput.responseBuilder
+              .speak(speechText)
+              .withStandardCard(APP_NAME, speechText, LOGO_URL, LOGO_URL)
+              .getResponse();
+      },
+};
+
+const ClearMakesIntent = {
+    canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+        && handlerInput.requestEnvelope.request.intent.name === 'ClearMakesIntent';
+    },
+    async handle(handlerInput) {
+        await dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'clearAll', 'array', 'make');
+        const speechText = 'Makes have been cleared. You can begin again when ready.';
+
+        return handlerInput.responseBuilder
+            .speak(speechText)
+            .withStandardCard(APP_NAME, speechText, LOGO_URL, LOGO_URL)
+            .getResponse();
+    },
+};
+
+
+// Danger zone. Reset app entirely. No confirmation
 const ResetAppDataIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
@@ -652,6 +802,14 @@ exports.handler = Alexa.SkillBuilders.custom()
         CompleteUpdateMinYearIntent,
         CompleteUpdateCityIntent,
         ShowAllLikedCarsIntent,
+        ClearBodyStylesIntent,
+        ClearMinYearIntent,
+        ClearMinYearIntent,
+        ClearConditionsIntent,
+        ClearMaxPriceIntent,
+        ClearMaxMileageIntent,
+        ClearMakesIntent,
+        ShowBasePreferencesIntent,
         ResetAppDataIntent,
         HelpIntentHandler,
         CancelAndStopIntentHandler,

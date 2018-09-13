@@ -18,16 +18,29 @@ These are persisted. you can quit and come back at any time
    
   > Alexa, update min year
    
-  > Alexa, update condition
+  > Alexa, update conditions
    
   > Alexa, update max price
    
-  > Alexa, update min year
+  > Alexa, update max mileage
  
-  > Alexa, update make
+  > Alexa, update makes
+
+To clear preferences (City cannot be cleared once set. It can be updated)   
+  > Alexa, clear body styles
+   
+  > Alexa, clear min year
+   
+  > Alexa, clear conditions
+   
+  > Alexa, clear max price
+   
+  > Alexa, clear max mileage
+ 
+  > Alexa, clear makes  
 
 Review like history
   > Alexa, show me my likes
   
-Reset base preferences and clear like/dislike history
+Reset base preferences and clear like/dislike history (This allows you to start everything over. Intent is not confirmed.)
   > Alexa, reset app data
