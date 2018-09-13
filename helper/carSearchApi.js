@@ -12,8 +12,9 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
         // basePreferences, dislikes, saved cars
         const basePreferences = storedUserPreferences.basePreferences;
 
-        // Need a zip, default to Atlanta
-        const zip = get(basePreferences, 'zip', 30318);
+        // Need a lat/long, default to Atlanta's coords
+        const latitude = get(basePreferences, 'latitude', '33.6488');
+        const longitude = get(basePreferences, 'longitude', '-84.3915');
         const maxYear = 2021;
         const maxRowsPerRequest = 50;
 
@@ -35,7 +36,7 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
         const sortBy = sortByOptions[Math.floor(Math.random() * sortByOptions.length)];
         const sortOrder = sortOrderOptions[Math.floor(Math.random() * sortOrderOptions.length)];
 
-        let baseUrl = `http://api.marketcheck.com/v1/search?api_key=${process.env.API_KEY}&start=${startIndex}&seller_type=dealer&radius=50&zip=${zip}&rows=${maxRowsPerRequest}&sort_by=${sortBy}&sort_order=${sortOrder}&carfax_clean_title=true`;
+        let baseUrl = `http://api.marketcheck.com/v1/search?api_key=${process.env.API_KEY}&start=${startIndex}&seller_type=dealer&radius=50&latitude=${latitude}&longitude=${longitude}&rows=${maxRowsPerRequest}&sort_by=${sortBy}&sort_order=${sortOrder}`;
 
         baseUrl += `&miles_range=0-${get(basePreferences, 'maxMileage', 400000)}`;
 
@@ -50,14 +51,15 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
 
         if (carType !== 'new') {
             // new cars don't need a year range
-            const minYear = get(basePreferences, 'minYear', 1981);
-            const years = [];
+            const minYear = get(basePreferences, 'minYear');
+            if (minYear !== undefined) {
+                const years = [];
 
-            for (let i = minYear; i < maxYear; i++) {
-                years.push(i);
+                for (let i = minYear; i < maxYear; i++) {
+                    years.push(i);
+                }
+                baseUrl += `&year=${years.join(',')}`;
             }
-
-            baseUrl += `&year=${years.join(',')}`;
         }
 
         // Join makes to make a string (no pun intended)

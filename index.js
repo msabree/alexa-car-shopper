@@ -260,11 +260,15 @@ const CompleteUpdateCityIntent = {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
         && handlerInput.requestEnvelope.request.intent.name === 'UpdateCityIntent';
     },
-    handle(handlerInput) {
+    async handle(handlerInput) {
         const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
         const slotValues = getSlotValues(filledSlots);
         const parsedCity = get(slotValues, 'City.resolved');
-        let zip = 30318;
+
+        // default coords for atlanta
+        let latitude = '33.6488';
+        let longitude = '-84.3915';
+
         let speechText;
         console.log(parsedCity);
         if (parsedCity === undefined || parsedCity.split(' ').length < 2) {
@@ -286,19 +290,23 @@ const CompleteUpdateCityIntent = {
                 speechText = 'Unable to determine city, defaulting to Atlanta Georgia. To try again, say, Alexa update city.';
             } else {
                 const location = zipcodes.lookupByName(cityValue.trim(), stateValue.trim())[0];
-                zip = get(location, 'zip');
+                latitude = get(location, 'latitude');
+                longitude = get(location, 'longitude');
 
-                if (zip === undefined) {
-                    zip = 30318;
+                if (latitude === undefined || longitude === undefined) {
+                    latitude = '33.6488';
+                    longitude = '-84.3915';
                     speechText = 'Unable to determine city, setting to Atlanta Georgia. To try again, say, Alexa update search city.';
                 } else {
-                    speechText = `You have requested ${parsedCity} which maps to zipcode ${zip}. Your preferences will be updated.`;
+                    speechText = `I will search for cars within a 50 mile radius of ${parsedCity}. Your preferences will be updated.`;
                 }
             }
         }
 
         // Update the user's preferences
-        dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'zip', zip);
+        console.log(latitude, longitude);
+        await dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'latitude', latitude);
+        await dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'longitude', longitude);
 
         return handlerInput.responseBuilder
             .speak(speechText)
