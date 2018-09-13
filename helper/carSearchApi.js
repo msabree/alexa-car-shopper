@@ -84,10 +84,10 @@ module.exports = (storedUserPreferences, startIndex = 0) => {
                         bodyStylesQueryString += `hatchback${comma}`;
                         break;
                     case 'sedan':
-                        bodyStylesQueryString += `sedan`;
+                        bodyStylesQueryString += `sedan${comma}`;
                         break;
                     case 'suv/crossover':
-                        bodyStylesQueryString += `suv`;
+                        bodyStylesQueryString += `suv${comma}`;
                         break;
                     case 'truck':
                         bodyStylesQueryString += `pickup${comma}`;
