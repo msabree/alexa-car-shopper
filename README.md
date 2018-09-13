@@ -1,6 +1,6 @@
 # Alexa - Car Shopper
 
-Alexa - Car Shopper is an alexa app that enables searching for cars based on accumulated user preferences. As you interact with suggested cars in your area and tell Alexa why you dislike a car she will get better and finding you cars that you may be interested in buying. You can train Alexa at anytime to give her an idea of what you like to better generate suggestions.
+Alexa - Car Shopper is an Alexa Show App that enables a user to search for cars via voice commands. The idea is to allow for a more natural car searching experience. When car searching online you are typically required to set filters to see the cars you want. However, when filters are set you can easily miss out on good cars that may not fit into your filter set. The Alexa - Car Shopper app is intended to act like a virtual salesman. As Alexa shows you cars you can respond by saying that you like or dislike a car. As your history grows Alexa will analyze your like and dislike history to show you cars that you are more likely to like.
 
 # Available Commands:
 
