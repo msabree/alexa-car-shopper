@@ -127,7 +127,7 @@ const SaveResponseIntent = {
         const description = get(carDetails, 'heading', 'car');
         const miles = get(carDetails, 'miles', 'miles unknown');
         const price = get(carDetails, 'price', 'price unknown');
-        const images = get(carDetails, 'media.photo_links', [LOGO_URL, LOGO_URL]);
+        const images = get(carDetails, 'media.photo_links', [LOGO_URL]);
         const dealerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
         let dealerName = get(carDetails, 'dealer.name', 'Owner Unknown');
         dealerName = dealerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
@@ -144,7 +144,7 @@ const SaveResponseIntent = {
 
         return handlerInput.responseBuilder
             .addDelegateDirective(handlerInput.requestEnvelope.request.intent)
-            .withStandardCard(APP_NAME, showText, images[1], images[1])
+            .withStandardCard(APP_NAME, showText, images[0], images[0])
             .getResponse();
     },
 };
@@ -159,7 +159,7 @@ const CompleteSaveResponseIntent = {
         const slotValues = getSlotValues(filledSlots);
         const saveResponse = get(slotValues, 'SaveResponse.resolved');
         let speechText;
-        let images = [LOGO_URL, LOGO_URL, LOGO_URL];
+        let images = [LOGO_URL];
         let showText = '';
         if (saveResponse === undefined) {
             speechText = 'Unable to determine your choice, your like and dislike history was not affected. You can continue your search as normal.';
@@ -170,7 +170,7 @@ const CompleteSaveResponseIntent = {
             const description = get(carDetails, 'heading', 'car');
             const miles = get(carDetails, 'miles', 'miles unknown');
             const price = get(carDetails, 'price', 'price unknown');
-            images = get(carDetails, 'media.photo_links', []);
+            images = get(carDetails, 'media.photo_links', [LOGO_URL]);
             const dealerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
             let dealerName = get(carDetails, 'dealer.name', 'Owner Unknown');
             dealerName = dealerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
@@ -199,7 +199,7 @@ const CompleteSaveResponseIntent = {
 
         return handlerInput.responseBuilder
             .speak(speechText)
-            .withStandardCard(APP_NAME, showText, images[2], images[2])
+            .withStandardCard(APP_NAME, showText, images[0], images[0])
             .getResponse();
     },
 };
