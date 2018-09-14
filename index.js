@@ -35,6 +35,21 @@ const LaunchRequestHandler = {
     },
 };
 
+const FallbackIntentHandler = {
+    canHandle(handlerInput) {
+        return handlerInput.requestEnvelope.request.type === 'FallbackIntent';
+    },
+    handle(handlerInput) {
+        const speechText = `Sorry, I don't know how to help you with that. Say 'Alexa, help' for options.`;
+
+      return handlerInput.responseBuilder
+        .speak(speechText)
+        .reprompt(speechText)
+        .withStandardCard(APP_NAME, speechText, LOGO_URL, LOGO_URL)
+        .getResponse();
+    },
+};
+
 const SearchCarsNowIntent = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
@@ -52,7 +67,7 @@ const SearchCarsNowIntent = {
 
         if (results.error !== undefined) {
             const response = handlerInput.responseBuilder;
-            response.speak('An error occurred while tryng to fetch cars. Please try again later.');
+            response.speak('No results found. Please try again later.');
             return response.getResponse();
         } else if (results.listings.length === 0) {
             const response = handlerInput.responseBuilder;
@@ -62,8 +77,8 @@ const SearchCarsNowIntent = {
             const carDetails = preferenceEngine.findTopResult(results.listings, storedUserPreferences);
             const description = get(carDetails, 'heading', 'car');
             const miles = get(carDetails, 'miles', 'Miles unknown');
-            const price = get(carDetails, 'price', 'Price unknown');
-            const images = get(carDetails, 'media.photo_links', [LOGO_URL]);
+            let price = get(carDetails, 'price', 'Call For Price');
+            let images = get(carDetails, 'media.photo_links', [LOGO_URL]);
             const dealerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
             let dealerName = get(carDetails, 'dealer.name', 'Owner Unknown');
             dealerName = dealerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
@@ -71,16 +86,27 @@ const SearchCarsNowIntent = {
             const dealerCity = get(carDetails, 'dealer.city', 'City Unknown');
             const dealerState = get(carDetails, 'dealer.state', 'State Unknown');
 
-            const speechText = `
-                I found a ${description} with ${miles} miles for a sales price of $${price}.
-                To add this car to your like or dislike history you can say 'save response'.
-                Otherwise you can continue searching or exit the app.
-            `;
+            let speechText = `I found a ${description}. `;
+            if (miles !== 'Miles unknown') {
+                speechText += `The car has ${miles} on it. `;
+            }
+            if (price !== 'Call For Price') {
+                speechText += `The sales price is $${price}. `;
+            }
+            speechText += `Take your time and review the photos. When ready you can say 'Alexa, save response' to save it as a like or dislike.`;
+
+            if (price !== 'Call For Price') {
+                price = `$${price}`;
+            }
+
+            if (miles !== 'Miles unknown') {
+                miles = `${miles} miles`;
+            }
 
             const showStuff = [
                 description,
-                `${miles} miles`,
-                `Sales Price $${price}`,
+                miles,
+                `Sales Price: ${price}`,
                 `Dealer: ${dealerName}`,
                 `Phone: ${dealerPhone}`,
                 `Website: ${dealerWebsite}`,
@@ -88,6 +114,10 @@ const SearchCarsNowIntent = {
             ];
 
             await dynamoDB.lastShownCar(handlerInput.requestEnvelope, carDetails);
+
+            if (images.length === 0) {
+                images = [LOGO_URL];
+            }
 
             const response = handlerInput.responseBuilder;
             response.speak(speechText);
@@ -125,17 +155,26 @@ const SaveResponseIntent = {
         const carDetails = await dynamoDB.lastShownCar(handlerInput.requestEnvelope);
 
         const description = get(carDetails, 'heading', 'car');
-        const miles = get(carDetails, 'miles', 'miles unknown');
-        const price = get(carDetails, 'price', 'price unknown');
+        let miles = get(carDetails, 'miles', 'miles unknown');
+        let price = get(carDetails, 'price', 'Call For Price');
         const images = get(carDetails, 'media.photo_links', [LOGO_URL]);
         const dealerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
         let dealerName = get(carDetails, 'dealer.name', 'Owner Unknown');
         dealerName = dealerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
 
+
+        if (price !== 'Call For Price') {
+            price = `$${price}`;
+        }
+
+        if (miles !== 'miles unknown') {
+            miles = `${miles} miles`;
+        }
+
         const showText = `
             ${description}
 
-            ${miles} miles | $${price}
+            ${miles} | ${price}
 
             Dealer: ${dealerName}
 
@@ -175,10 +214,18 @@ const CompleteSaveResponseIntent = {
             let dealerName = get(carDetails, 'dealer.name', 'Owner Unknown');
             dealerName = dealerName.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
 
+            if (price !== 'Call For Price') {
+                price = `$${price}`;
+            }
+
+            if (miles !== 'miles unknown') {
+                miles = `${miles} miles`;
+            }
+
             showText = `
                 ${description}
     
-                ${miles} miles | $${price}
+                ${miles} | ${price}
     
                 Dealer: ${dealerName}
     
@@ -227,7 +274,7 @@ const CompleteUpdateMakeIntent = {
         const slotValues = getSlotValues(filledSlots);
         const make = get(slotValues, 'Make.resolved');
         let speechText;
-        if (make === undefined) {
+        if (make === undefined || get(slotValues, 'Make.isValidated', false) === false) {
             speechText = 'Unable to determine make. To try again, say, Alexa update make.';
         } else {
             speechText = `You have requested to search for cars made by ${make}. Your preferences will be updated.`;
@@ -263,7 +310,7 @@ const CompleteUpdateCityIntent = {
     async handle(handlerInput) {
         const filledSlots = handlerInput.requestEnvelope.request.intent.slots;
         const slotValues = getSlotValues(filledSlots);
-        const parsedCity = get(slotValues, 'City.resolved');
+        let parsedCity = get(slotValues, 'City.resolved');
 
         // default coords for atlanta
         let latitude = '33.6488';
@@ -307,10 +354,24 @@ const CompleteUpdateCityIntent = {
         }
 
         // Update the user's preferences
-        console.log(latitude, longitude);
-        await dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'latitude', latitude);
-        await dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'longitude', longitude);
-        await dynamoDB.saveUserBasePreferences(handlerInput.requestEnvelope, 'add', 'string', 'cityState', parsedCity);
+        console.log(latitude, longitude, parsedCity);
+        await dynamoDB.saveUserBasePreferencesV2(handlerInput.requestEnvelope, 'add', [
+            {
+                attributeValueType: 'string',
+                attributeKey: 'latitude',
+                attributeValue: latitude,
+            },
+            {
+                attributeValueType: 'string',
+                attributeKey: 'longitude',
+                attributeValue: longitude,
+            },
+            {
+                attributeValueType: 'string',
+                attributeKey: 'cityState',
+                attributeValue: parsedCity,
+            },
+        ]);
 
         return handlerInput.responseBuilder
             .speak(speechText)
@@ -342,7 +403,7 @@ const CompleteUpdateConditionsIntent = {
         const carCondition = get(slotValues, 'CarCondition.resolved');
         let speechText = '';
 
-        if (carCondition === undefined) {
+        if (carCondition === undefined || get(slotValues, 'CarCondition.isValidated', false) === false) {
             speechText = 'Unable to understand condition request. To try again, say, Alexa update search conditions.';
         } else {
             speechText = `You have requested to search ${carCondition} vehicles. Your preferences will be updated.`;
@@ -381,7 +442,7 @@ const CompleteUpdateBodyStyleIntent = {
         const bodyStyle = get(slotValues, 'BodyStyle.resolved');
         let speechText = '';
 
-        if (bodyStyle === undefined) {
+        if (bodyStyle === undefined || get(slotValues, 'BodyStyle.isValidated', false) === false) {
             speechText = 'Unable to understand body style request. To try again, say, Alexa update body styles.';
         } else {
             speechText = `You have requested to search ${bodyStyle} body styles. Your preferences will be updated.`;
@@ -420,8 +481,10 @@ const CompleteUpdateMaxPriceIntent = {
       const maxPrice = get(slotValues, 'MaxPrice.resolved');
       let speechText = '';
 
-      if (maxPrice === undefined) {
+      if (maxPrice === undefined || get(slotValues, 'MaxPrice.isValidated', false) === false) {
           speechText = 'Unable to understand max price request. To try again, say, Alexa update max price.';
+      } else if (maxPrice < 0 || maxPrice > 500) {
+        speechText = 'Max price in thousands must be between 1 and 500.';
       } else {
           speechText = `You have requested to set a max price of ${maxPrice} thousand. Your preferences will be updated.`;
 
@@ -459,8 +522,10 @@ const CompleteUpdateMaxMileageIntent = {
         const maxMileage = get(slotValues, 'MaxMileage.resolved');
         let speechText = '';
 
-        if (maxMileage === undefined) {
+        if (maxMileage === undefined || get(slotValues, 'MaxMileage.isValidated', false) === false) {
             speechText = 'Unable to understand max mileage request. To try again, say, Alexa update max mileage.';
+        } else if (maxMileage < 0 || maxMileage > 300) {
+            speechText = 'Max mileage in thousands must be between 1 and 300.';
         } else {
             speechText = `You have requested to set a max mileage of ${maxMileage} thousand. Your preferences will be updated.`;
 
@@ -498,8 +563,10 @@ const CompleteUpdateMinYearIntent = {
         const minYear = get(slotValues, 'MinYear.resolved');
         let speechText = '';
 
-        if (minYear === undefined) {
+        if (minYear === undefined || get(slotValues, 'MaxMileage.isValidated', false) === false) {
             speechText = 'Unable to understand minimum year request. To try again, say, Alexa update min year.';
+        } else if (minYear < 1981 || minYear > 2020) {
+            speechText = 'Min year be between 1981 and 2020.';
         } else {
             speechText = `You have requested to set a minimum search year of ${minYear}. Your preferences will be updated.`;
 
@@ -595,9 +662,9 @@ const ShowBasePreferencesIntent = {
             speechText += `You are searching for cars of types ${makes.join(', ')}. `;
         }
 
-        if(speechText === ''){
+        if (speechText === '') {
             speechText = 'You do not have any stored preferences';
-        }        
+        }
 
         return handlerInput.responseBuilder
             .speak(speechText)
@@ -754,7 +821,7 @@ const CancelAndStopIntentHandler = {
             || handlerInput.requestEnvelope.request.intent.name === 'AMAZON.StopIntent');
     },
     handle(handlerInput) {
-        const speechText = 'Your preferences are saved. You can resume your search where you left off. Good bye!';
+        const speechText = 'Your last request has been cancelled.';
 
         return handlerInput.responseBuilder
             .speak(speechText)
@@ -790,6 +857,7 @@ const ErrorHandler = {
 exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
+        FallbackIntentHandler,
         SearchCarsNowIntent,
         SaveResponseIntent,
         CompleteSaveResponseIntent,

@@ -57,6 +57,56 @@ const saveUserBasePreferences = (requestEnvelope, action = 'add', attributeValue
     });
 };
 
+// multiple at a time
+const saveUserBasePreferencesV2 = (requestEnvelope, action = 'add', updates) => {
+   getStoredUserPreferences(requestEnvelope)
+   .then((storedUserPreferences) => {
+       console.log(storedUserPreferences);
+       const basePreferencesPath = 'basePreferences';
+       let clonedStoredUserPreferences = cloneDeep(storedUserPreferences);
+
+       for (let i = 0; i < updates.length; i++) {
+           let attributeValueType = updates[i].attributeValueType;
+           let attributeKey = updates[i].attributeKey;
+           let attributeValue = updates[i].attributeValue;
+
+           let storedAttributeValue = get(clonedStoredUserPreferences, [basePreferencesPath, attributeKey]);
+
+           console.log(action, attributeKey, attributeValue);
+
+           if (action === 'add') {
+               if (storedAttributeValue === undefined) {
+                   if (attributeValueType === 'array') {
+                       set(clonedStoredUserPreferences, [basePreferencesPath, attributeKey], [attributeValue]);
+                   } else {
+                       set(clonedStoredUserPreferences, [basePreferencesPath, attributeKey], attributeValue);
+                   }
+               } else {
+                   if (attributeValueType === 'array') {
+                       storedAttributeValue.push(attributeValue);
+                   } else {
+                       storedAttributeValue = attributeValue;
+                   }
+                   set(clonedStoredUserPreferences, [basePreferencesPath, attributeKey], storedAttributeValue);
+               }
+           } else if (action === 'clear') {
+               if (attributeValueType === 'array') {
+                   set(clonedStoredUserPreferences, [basePreferencesPath, attributeKey], storedAttributeValue.filter((item) => item !== attributeValue));
+               } else {
+                   delete clonedStoredUserPreferences[basePreferencesPath][attributeKey];
+               }
+           } else if (action === 'clearAll') {
+               delete clonedStoredUserPreferences[basePreferencesPath][attributeKey];
+           }
+       }
+
+       return dynamoDbPersistenceAdapter.saveAttributes(requestEnvelope, clonedStoredUserPreferences);
+   })
+   .catch((err) => {
+       return Promise.reject(err);
+   });
+};
+
 // Update likes/dislikes -> this will make our algorithm preference engine smarter
 const updateCarSearchHistory = (requestEnvelope, carResponseType, objCarDetails) => {
     getStoredUserPreferences(requestEnvelope)
@@ -113,6 +163,7 @@ const resetAppData = (requestEnvelope) => {
 module.exports = {
     lastShownCar,
     saveUserBasePreferences,
+    saveUserBasePreferencesV2,
     updateCarSearchHistory,
     getStoredUserPreferences,
     resetAppData,
