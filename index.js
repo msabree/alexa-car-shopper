@@ -480,9 +480,9 @@ const CompleteUpdateMaxPriceIntent = {
       const maxPrice = get(slotValues, 'MaxPrice.resolved');
       let speechText = '';
 
-      if (maxPrice === undefined || get(slotValues, 'MaxPrice.isValidated', false) === false) {
+      if (maxPrice === undefined || isNaN(parseInt(maxPrice)) === true) {
           speechText = 'Unable to understand max price request. To try again, say, Alexa update max price.';
-      } else if (maxPrice < 0 || maxPrice > 500) {
+      } else if (parseInt(maxPrice) < 0 || parseInt(maxPrice) > 500) {
         speechText = 'Max price in thousands must be between 1 and 500.';
       } else {
           speechText = `You have requested to set a max price of ${maxPrice} thousand. Your preferences will be updated.`;
@@ -521,9 +521,9 @@ const CompleteUpdateMaxMileageIntent = {
         const maxMileage = get(slotValues, 'MaxMileage.resolved');
         let speechText = '';
 
-        if (maxMileage === undefined || get(slotValues, 'MaxMileage.isValidated', false) === false) {
+        if (maxMileage === undefined || isNaN(parseInt(maxMileage)) === true) {
             speechText = 'Unable to understand max mileage request. To try again, say, Alexa update max mileage.';
-        } else if (maxMileage < 0 || maxMileage > 300) {
+        } else if (parseInt(maxMileage) < 0 || parseInt(maxMileage) > 300) {
             speechText = 'Max mileage in thousands must be between 1 and 300.';
         } else {
             speechText = `You have requested to set a max mileage of ${maxMileage} thousand. Your preferences will be updated.`;
@@ -562,9 +562,9 @@ const CompleteUpdateMinYearIntent = {
         const minYear = get(slotValues, 'MinYear.resolved');
         let speechText = '';
 
-        if (minYear === undefined || get(slotValues, 'MinYear.isValidated', false) === false) {
+        if (minYear === undefined || isNaN(parseInt(minYear)) === true) {
             speechText = 'Unable to understand minimum year request. To try again, say, Alexa update min year.';
-        } else if (minYear < 1981 || minYear > 2020) {
+        } else if (parseInt(minYear) < 1981 || parseInt(minYear) > 2020) {
             speechText = 'Min year be between 1981 and 2020.';
         } else {
             speechText = `You have requested to set a minimum search year of ${minYear}. Your preferences will be updated.`;
