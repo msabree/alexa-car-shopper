@@ -76,7 +76,7 @@ const SearchCarsNowIntent = {
         } else {
             const carDetails = preferenceEngine.findTopResult(results.listings, storedUserPreferences);
             const description = get(carDetails, 'heading', 'car');
-            const miles = get(carDetails, 'miles', 'Miles unknown');
+            let miles = get(carDetails, 'miles', 'Miles unknown');
             let price = get(carDetails, 'price', 'Call For Price');
             let images = get(carDetails, 'media.photo_links', [LOGO_URL]);
             const dealerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
@@ -207,8 +207,8 @@ const CompleteSaveResponseIntent = {
             const carDetails = await dynamoDB.lastShownCar(handlerInput.requestEnvelope);
 
             const description = get(carDetails, 'heading', 'car');
-            const miles = get(carDetails, 'miles', 'miles unknown');
-            const price = get(carDetails, 'price', 'price unknown');
+            let miles = get(carDetails, 'miles', 'miles unknown');
+            let price = get(carDetails, 'price', 'price unknown');
             images = get(carDetails, 'media.photo_links', [LOGO_URL]);
             const dealerPhone = get(carDetails, 'dealer.phone', 'Phone Unavailable');
             let dealerName = get(carDetails, 'dealer.name', 'Owner Unknown');
@@ -848,8 +848,8 @@ const ErrorHandler = {
         console.log(`Error handled: ${error.message}`);
 
         return handlerInput.responseBuilder
-            .speak('Sorry, there was an error processing the request. The dev team has been notified. Please try again later.')
-            .reprompt('Sorry, there was an error processing the request. The dev team has been notified. Please try again later.')
+            .speak(`I'm not sure what you said. Please try again.`)
+            .reprompt(`I didn't quite catch that last request. Please try again.`)
             .getResponse();
     },
 };
