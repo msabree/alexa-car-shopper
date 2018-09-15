@@ -88,7 +88,7 @@ const SearchCarsNowIntent = {
 
             let speechText = `I found a ${description}. `;
             if (miles !== 'Miles unknown') {
-                speechText += `The car has ${miles} on it. `;
+                speechText += `The car has ${miles} miles on it. `;
             }
             if (price !== 'Call For Price') {
                 speechText += `The sales price is $${price}. `;
@@ -104,13 +104,12 @@ const SearchCarsNowIntent = {
             }
 
             const showStuff = [
-                description,
-                miles,
                 `Sales Price: ${price}`,
+                miles,
                 `Dealer: ${dealerName}`,
                 `Phone: ${dealerPhone}`,
-                `Website: ${dealerWebsite}`,
                 `Location: ${dealerCity} ${dealerState}`,
+                `Website: ${dealerWebsite}`,
             ];
 
             await dynamoDB.lastShownCar(handlerInput.requestEnvelope, carDetails);
@@ -821,7 +820,7 @@ const CancelAndStopIntentHandler = {
             || handlerInput.requestEnvelope.request.intent.name === 'AMAZON.StopIntent');
     },
     handle(handlerInput) {
-        const speechText = 'Your last request has been cancelled.';
+        const speechText = 'Your preferences are saved. You can resume when ready.';
 
         return handlerInput.responseBuilder
             .speak(speechText)
@@ -845,6 +844,7 @@ const ErrorHandler = {
         return true;
     },
     handle(handlerInput, error) {
+        console.log(error);
         console.log(`Error handled: ${error.message}`);
 
         return handlerInput.responseBuilder

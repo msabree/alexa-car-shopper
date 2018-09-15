@@ -39,6 +39,9 @@ To clear preferences (City cannot be cleared once set. It can be updated)
  
   > Alexa, clear makes  
 
+Save last viewed car as a like or dislike
+  > Alexa, save response
+
 Show base preferences
   > Alexa, show me my preferences
 
