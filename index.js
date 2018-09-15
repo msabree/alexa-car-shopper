@@ -563,7 +563,7 @@ const CompleteUpdateMinYearIntent = {
         const minYear = get(slotValues, 'MinYear.resolved');
         let speechText = '';
 
-        if (minYear === undefined || get(slotValues, 'MaxMileage.isValidated', false) === false) {
+        if (minYear === undefined || get(slotValues, 'MinYear.isValidated', false) === false) {
             speechText = 'Unable to understand minimum year request. To try again, say, Alexa update min year.';
         } else if (minYear < 1981 || minYear > 2020) {
             speechText = 'Min year be between 1981 and 2020.';
